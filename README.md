@@ -44,7 +44,7 @@
 | 样式     | [Tailwind CSS 4](https://tailwindcss.com)                                                          |
 | 国际化   | [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) (Inlang)                  |
 | 图标     | [Phosphor](https://phosphoricons.com) + [Lucide](https://lucide.dev)                               |
-| 构建工具 | [Vite](https://vite.dev) + Brotli 压缩                                                             |
+| 构建工具 | [Vite](https://vite.dev)                                                                           |
 | 部署     | 静态站点 (`@sveltejs/adapter-static`)                                                              |
 
 ## 项目结构
