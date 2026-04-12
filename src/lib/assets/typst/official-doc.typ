@@ -6,7 +6,8 @@
 #import "tuzhang.typ": circular_stamp
 
 #let pure-v(length) = block(v(length), width: 100%, outset: 0pt, inset: 0pt, below: 0pt, spacing: 0pt)
-#let dark-red = rgb(210, 0, 0)
+#let header-red = cmyk(15%, 100%, 100%, 0%)
+#let stamp-red = rgb(220, 0, 0)
 
 #let noindent() = h(-2em)
 
@@ -97,7 +98,7 @@
   }
 
   align(center, {
-    set text(font: "FZXiaoBiaoSong-B05", size: 36pt, fill: dark-red)
+    set text(font: "FZXiaoBiaoSong-B05", size: 36pt, fill: header-red)
     let target-width = 156mm // 210mm (A4) - 28mm (inside) - 26mm (outside)
     context {
       if authority-names.len() == 1 {
@@ -136,7 +137,7 @@
     block(text(size: 16pt, issuer + "〔" + str(issue-date.year()) + "〕" + str(ref-no) + "号")),
   )
 
-  line(length: 100%, stroke: 3pt + dark-red)
+  line(length: 100%, stroke: 3pt + header-red)
 
   pure-v(20mm)
 
@@ -230,8 +231,8 @@
                 authority.name,
                 authority.icon,
                 inner_ring_width: 0pt,
-                text_color: dark-red,
-                border_color: dark-red,
+                text_color: stamp-red,
+                border_color: stamp-red,
               )),
             )
           }

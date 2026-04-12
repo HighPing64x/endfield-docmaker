@@ -167,7 +167,7 @@ export const initializeTypst = async () => {
         ISSUERS.map(async (issuer) => {
           if (issuer.type === 'svg') {
             const recentered = await recenterSvg(issuer.raw);
-            const redTinted = tintSvg(recentered, [210, 0, 0]);
+            const redTinted = tintSvg(recentered, [220, 0, 0]);
             const blackTinted = tintSvg(issuer.raw, [0, 0, 0], 0.25);
             await Promise.all([
               typst.mapShadow(`/stamp-${issuer.key}.svg`, redTinted),
