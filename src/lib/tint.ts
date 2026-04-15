@@ -13,6 +13,46 @@ const getEffectiveOpacity = (red: number, green: number, blue: number, alpha: nu
   return (luminance * alpha) / 255;
 };
 
+const computeCentroid = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+): { x: number; y: number; totalWeight: number } => {
+  let isGrayscale = true;
+  outer: for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const offset = (width * y + x) * 4;
+      if (data[offset] !== data[offset + 1] || data[offset + 1] !== data[offset + 2]) {
+        isGrayscale = false;
+        break outer;
+      }
+    }
+  }
+
+  let sumX = 0,
+    sumY = 0,
+    totalWeight = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const offset = (width * y + x) * 4;
+      const weight = isGrayscale
+        ? data[offset + 3]
+        : getEffectiveOpacity(data[offset], data[offset + 1], data[offset + 2], data[offset + 3]);
+      if (weight > 0) {
+        sumX += x * weight;
+        sumY += y * weight;
+        totalWeight += weight;
+      }
+    }
+  }
+
+  return {
+    x: totalWeight > 0 ? sumX / totalWeight : 0,
+    y: totalWeight > 0 ? sumY / totalWeight : 0,
+    totalWeight
+  };
+};
+
 /**
  * Shift an image so its alpha-weighted centroid sits at the geometric center.
  * Returns a canvas with the recentered content (square, sized to fit).
@@ -22,34 +62,13 @@ const recenterImage = (img: HTMLImageElement): OffscreenCanvas => {
   const tmp = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
   const tmpCtx = tmp.getContext('2d')!;
   tmpCtx.drawImage(img, 0, 0);
-  const imageData = tmpCtx.getImageData(0, 0, tmp.width, tmp.height);
-  const { data } = imageData;
+  const { data } = tmpCtx.getImageData(0, 0, tmp.width, tmp.height);
 
   // Compute alpha-weighted centroid
-  let sumX = 0,
-    sumY = 0,
-    totalWeight = 0;
-  for (let y = 0; y < tmp.height; y++) {
-    for (let x = 0; x < tmp.width; x++) {
-      const offset = (tmp.width * y + x) * 4;
-      const weight = getEffectiveOpacity(
-        data[offset],
-        data[offset + 1],
-        data[offset + 2],
-        data[offset + 3]
-      );
-      if (weight > 0) {
-        sumX += x * weight;
-        sumY += y * weight;
-        totalWeight += weight;
-      }
-    }
-  }
+  const { x: centroidX, y: centroidY, totalWeight } = computeCentroid(data, tmp.width, tmp.height);
 
   if (totalWeight === 0) return tmp;
 
-  const centroidX = sumX / totalWeight;
-  const centroidY = sumY / totalWeight;
   const imgCx = tmp.width / 2;
   const imgCy = tmp.height / 2;
   const dx = imgCx - centroidX;
@@ -95,31 +114,17 @@ export const recenterSvg = async (raw: string): Promise<string> => {
     ctx.drawImage(img, 0, 0);
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    let sumX = 0,
-      sumY = 0,
-      totalWeight = 0;
-    for (let y = 0; y < canvas.height; y++) {
-      for (let x = 0; x < canvas.width; x++) {
-        const offset = (canvas.width * y + x) * 4;
-        const weight = getEffectiveOpacity(
-          data[offset],
-          data[offset + 1],
-          data[offset + 2],
-          data[offset + 3]
-        );
-        if (weight > 0) {
-          sumX += x * weight;
-          sumY += y * weight;
-          totalWeight += weight;
-        }
-      }
-    }
+    const {
+      x: centroidPxX,
+      y: centroidPxY,
+      totalWeight
+    } = computeCentroid(data, canvas.width, canvas.height);
 
     if (totalWeight === 0) return raw;
 
     // Convert centroid to viewBox coordinates
-    const centroidVbX = vbMinX + (sumX / totalWeight / canvas.width) * vbWidth;
-    const centroidVbY = vbMinY + (sumY / totalWeight / canvas.height) * vbHeight;
+    const centroidVbX = vbMinX + (centroidPxX / canvas.width) * vbWidth;
+    const centroidVbY = vbMinY + (centroidPxY / canvas.height) * vbHeight;
 
     // Square viewBox centered on centroid, large enough to contain all content
     const halfSide = Math.max(
