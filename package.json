@@ -1,7 +1,7 @@
 {
   "name": "endfield-docmaker",
   "private": true,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -57,6 +57,7 @@
     "@myriaddreamin/typst-ts-renderer": "0.7.0-rc2",
     "@myriaddreamin/typst-ts-web-compiler": "0.7.0-rc2",
     "@myriaddreamin/typst.ts": "0.7.0-rc2",
+    "@vercel/analytics": "^2.0.1",
     "mode-watcher": "^1.1.0"
   },
   "packageManager": "pnpm@10.33.0"

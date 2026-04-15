@@ -11,6 +11,12 @@
 
 </div>
 
+> [!IMPORTANT]
+> 该工具仅供娱乐与学习交流之用，请在合理、合法的范围内使用。  
+> 该工具本身无法在不修改代码的前提下仿造真实文件或真实存在的机构签发的文件。  
+> 因对该工具的不合理使用而产生的任何直接或间接责任、损失或纠纷，使用者自行承担。  
+> 他人对该仓库代码作出的任何改动、由此产生的风险或后果均与该仓库所有者无关。
+
 ## 功能特性
 
 - 在浏览器中实时生成红头公文风格的 PDF 文件，无需后端服务
@@ -38,38 +44,44 @@
 | 样式     | [Tailwind CSS 4](https://tailwindcss.com)                                                          |
 | 国际化   | [Paraglide JS](https://inlang.com/m/gerre34r/library-inlang-paraglideJs) (Inlang)                  |
 | 图标     | [Phosphor](https://phosphoricons.com) + [Lucide](https://lucide.dev)                               |
-| 构建工具 | [Vite](https://vite.dev) + Brotli 压缩                                                             |
+| 构建工具 | [Vite](https://vite.dev)                                                                           |
 | 部署     | 静态站点 (`@sveltejs/adapter-static`)                                                              |
 
 ## 项目结构
 
 ```
 endfield-docmaker/
-├── src/
-│   ├── routes/
-│   │   ├── +layout.svelte          # 根布局
-│   │   ├── +page.svelte            # 主页面（表单 + PDF 预览）
-│   │   └── layout.css              # 全局样式与主题变量
-│   ├── lib/
-│   │   ├── components/
-│   │   │   ├── DateInput.svelte    # 日期输入组件
-│   │   │   ├── Footer.svelte       # 页脚
-│   │   │   ├── LocaleSwitch.svelte # 语言切换
-│   │   │   ├── ThemeToggle.svelte  # 明暗主题切换
-│   │   │   └── ui/                 # shadcn-svelte 组件
-│   │   ├── assets/
-│   │   │   └── typst/
-│   │   │       ├── official-doc.typ  # 红头文件模板
-│   │   │       └── tuzhang.typ       # 圆形公章生成器
-│   │   ├── typst.ts                # Typst WASM 初始化与编译逻辑
-│   │   ├── index.ts                # 工具函数
-│   │   └── paraglide/              # i18n 生成文件
-│   ├── hooks.ts                    # URL 去本地化
-│   └── app.d.ts                    # 全局类型定义
 ├── messages/
 │   ├── en.json                     # 英文本地化文本
 │   └── zh.json                     # 中文本地化文本
-├── static/fonts/                   # 字体文件
+├── scripts/
+│   └── manage-messages.ts          # i18n 文案管理脚本
+├── src/
+│   ├── routes/
+│   │   ├── +layout.svelte          # 根布局
+│   │   ├── +layout.ts              # 根布局加载逻辑
+│   │   ├── +page.svelte            # 主页面（表单 + PDF 预览）
+│   │   └── layout.css              # 全局样式与主题变量
+│   └── lib/
+│       ├── constants.ts            # 常量定义
+│       ├── index.ts                # 公共导出
+│       ├── tint.ts                 # 颜色处理
+│       ├── typst.svelte.ts         # Typst WASM 初始化与编译逻辑
+│       ├── utils.ts                # 工具函数
+│       ├── hooks/                  # 业务 hooks
+│       ├── assets/
+│       │   ├── fonts/              # 字体资源
+│       │   ├── logos/              # 机构 Logo
+│       │   └── typst/
+│       │       ├── official-doc.typ  # 红头文件模板
+│       │       └── tuzhang.typ       # 圆形公章生成器
+│       ├── components/
+│       │   ├── DateInput.svelte    # 日期输入组件
+│       │   ├── Footer.svelte       # 页脚
+│       │   ├── LocaleSwitch.svelte # 语言切换
+│       │   ├── ThemeToggle.svelte  # 明暗主题切换
+│       │   └── ui/                 # shadcn-svelte 组件
+│       └── paraglide/              # i18n 生成文件
 └── package.json
 ```
 
@@ -91,9 +103,6 @@ pnpm fl
 # 构建静态站点
 pnpm build
 ```
-
-> [!NOTE]
-> PDF 中使用的中文字体文件（仿宋、华文宋体、方正小标宋、黑体、楷体）位于 `static/fonts/` 目录，由 Typst 在初始化时以 Blob URL 的方式预加载。
 
 ## 致谢
 

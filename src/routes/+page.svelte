@@ -12,9 +12,10 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Spinner } from '$lib/components/ui/spinner';
   import { Separator } from '$lib/components/ui/separator';
-  import { getTypstDocument, pick, triggerDownload, type Authority } from '$lib';
+  import { pick, triggerDownload } from '$lib/utils';
+  import type { Authority } from '$lib/types';
   import { onMount } from 'svelte';
-  import typst, { loadingState, waitForTypst } from '$lib/typst.svelte';
+  import typst, { getTypstDocument, loadingState, waitForTypst } from '$lib/typst.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import { ISSUERS } from '$lib/constants';
   import PlusIcon from '@lucide/svelte/icons/plus';
@@ -220,7 +221,7 @@
 
 <!-- Document Maker Section -->
 <section
-  class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:flex md:min-h-[calc(100vh-15rem)] md:flex-col md:px-8"
+  class="mx-auto w-full max-w-400 px-4 py-8 sm:px-6 md:flex md:min-h-[calc(100vh-15rem)] md:flex-col md:px-8"
 >
   <div class="grid grid-cols-1 gap-6 md:flex-1 md:grid-cols-2 md:grid-rows-[1fr]">
     <!-- Left: Form -->
@@ -305,7 +306,7 @@
                 dragOverIndex = null;
               }}
               role="listitem"
-              transition:slide
+              transition:slide={{ duration: 80 }}
             >
               {#if authorities.length > 1}
                 <span
