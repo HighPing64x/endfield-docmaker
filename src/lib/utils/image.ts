@@ -17,7 +17,7 @@ const computeCentroid = (
   data: Uint8ClampedArray,
   width: number,
   height: number
-): { x: number; y: number; r: number; totalWeight: number } => {
+): { x: number; y: number; scale: number; totalWeight: number } => {
   // 1. Check if grayscale
   let isGrayscale = true;
   outer: for (let y = 0; y < height; y++) {
@@ -54,59 +54,61 @@ const computeCentroid = (
     }
   }
 
-  if (totalWeight === 0) return { x: 0, y: 0, r: 0, totalWeight: 0 };
+  if (totalWeight === 0) return { x: 0, y: 0, scale: 1, totalWeight: 0 };
 
   const cx = sumX / totalWeight;
   const cy = sumY / totalWeight;
 
-  // Find the maximum possible distance to any of the 4 corners of the image
-  const maxDist = Math.ceil(
-    Math.max(
-      Math.sqrt(cx * cx + cy * cy),
-      Math.sqrt((width - cx) ** 2 + cy * cy),
-      Math.sqrt(cx * cx + (height - cy) ** 2),
-      Math.sqrt((width - cx) ** 2 + (height - cy) ** 2)
-    )
-  );
-
-  const distanceBins = new Float64Array(maxDist + 1);
-
-  // 3. PASS 2: Distance Histogram
+  // 3. PASS 2: Calculate Spatial Variance (RMS Radius) and Maximum Extents
+  let sumSqDist = 0;
+  let maxDistSq = 0;
   offset = 0;
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const weight = getWeight(offset);
-      if (weight > 0) {
+      if (weight > 127.5) {
         const dx = x - cx;
         const dy = y - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const penalty = Math.sqrt(1 - Math.pow(dist / maxDist, 3));
+        const distSq = dx * dx + dy * dy;
 
-        distanceBins[Math.ceil(dist)] += weight * penalty;
+        // Weight the squared distance by the ink's opacity
+        sumSqDist += weight * distSq;
+
+        // Track the absolute furthest significant pixel for boundary safety
+        if (distSq > maxDistSq) {
+          maxDistSq = distSq;
+        }
       }
       offset += 4;
     }
   }
 
-  // 4. Find the exact circular radius for the percentile
-  const percentile = 0.95;
-  const targetWeight = distanceBins.reduce((sum, w) => sum + w, 0) * percentile;
-  let cumulativeWeight = 0;
-  let r: number;
+  // The true measure of the "visual footprint" of the ink
+  const rmsRadius = Math.sqrt(sumSqDist / totalWeight);
+  // The absolute furthest point the logo reaches
+  const maxRadius = Math.sqrt(maxDistSq);
 
-  // Accumulate buckets starting from the center (r = 0) outwards
-  for (r = 0; r < distanceBins.length; r++) {
-    cumulativeWeight += distanceBins[r];
-    if (cumulativeWeight >= targetWeight) {
-      break;
-    }
-  }
+  // 4. Calculate Scale
+  const canvasMinSide = Math.min(width, height);
+
+  const targetRmsRatio = 2;
+  const idealScale = (canvasMinSide * targetRmsRatio) / (rmsRadius || 1);
+
+  // CRITICAL SAFETY BOUNDARY
+  const maxAllowedRadiusRatio = 0.68;
+  const safeScale = (canvasMinSide * maxAllowedRadiusRatio) / (maxRadius || 1);
+
+  // Use the visually ideal scale, unless it causes clipping, in which case clamp it.
+  const scale = Math.min(idealScale, safeScale);
 
   console.log(
-    `Centroid at (${cx.toFixed(2)}, ${cy.toFixed(2)}), circular radius for ${percentile * 100}% weight: ${r}px`
+    `Centroid: (${cx.toFixed(1)}, ${cy.toFixed(1)}) | ` +
+      `RMS: ${rmsRadius.toFixed(1)}px | MaxR: ${maxRadius.toFixed(1)}px | ` +
+      `Ideal Scale: ${idealScale.toFixed(2)} | Final Scale: ${scale.toFixed(2)}`
   );
 
-  return { x: cx, y: cy, r, totalWeight };
+  return { x: cx, y: cy, scale, totalWeight };
 };
 
 /**
@@ -124,10 +126,9 @@ const recenterImage = (img: HTMLImageElement): { canvas: OffscreenCanvas; scale:
   const {
     x: centroidX,
     y: centroidY,
-    r: innerRadius,
+    scale,
     totalWeight
   } = computeCentroid(data, tmp.width, tmp.height);
-  const scale = innerRadius > 0 ? Math.min(tmp.width, tmp.height) / (innerRadius * 2) : 1;
 
   if (totalWeight === 0) return { canvas: tmp, scale };
 
@@ -179,10 +180,9 @@ export const recenterSvg = async (raw: string): Promise<{ svg: string; scale: nu
     const {
       x: centroidPxX,
       y: centroidPxY,
-      r: innerRadius,
+      scale,
       totalWeight
     } = computeCentroid(data, canvas.width, canvas.height);
-    const scale = innerRadius > 0 ? Math.min(canvas.width, canvas.height) / (innerRadius * 2) : 1;
 
     if (totalWeight === 0) return { svg: raw, scale };
 
