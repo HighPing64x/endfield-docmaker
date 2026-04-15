@@ -12,7 +12,7 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Spinner } from '$lib/components/ui/spinner';
   import { Separator } from '$lib/components/ui/separator';
-  import { getTypstDocument, pick, triggerDownload, type Authority } from '$lib';
+  import { getTypstDocument, pick, triggerDownload, type Authority } from '$lib/utils';
   import { onMount } from 'svelte';
   import typst, { loadingState, waitForTypst } from '$lib/typst.svelte';
   import Button from '$lib/components/ui/button/button.svelte';

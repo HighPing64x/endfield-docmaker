@@ -7,7 +7,7 @@ import type {
   PackageResolveContext,
   PackageSpec
 } from '@myriaddreamin/typst.ts/dist/esm/internal.types.mjs';
-import { getFontBlobUrl } from '$lib';
+import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
 
