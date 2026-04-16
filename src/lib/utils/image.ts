@@ -85,7 +85,7 @@ const computeCentroid = (
     }
   }
 
-  // 4. Find the effective boundary of the logo (99.5th percentile to ignore noise)
+  // 4. Find the effective boundary of the logo
   let cumulativeWeight = 0;
   const targetMaxWeight = totalWeight * 0.995;
   let rMax = 1;
@@ -98,11 +98,8 @@ const computeCentroid = (
     }
   }
 
-  // ====================================================================
-  // 5. CORE VS PERIPHERY CALCULATION
-  // ====================================================================
-
-  // Define what counts as the "core" circle (e.g., the inner 55% of the radius)
+  // 5. Calculate periphery weight ratio & determine final scale
+  // Define what counts as the "core" circle
   const coreFraction = 0.7;
   const rCore = rMax * coreFraction;
 
@@ -117,12 +114,12 @@ const computeCentroid = (
   const outerWeightRatio = outerWeight / targetMaxWeight;
 
   // Penalty Factor: How aggressively to shrink logos with heavy outer edges.
-  const penaltyFactor = 0.9;
+  const penaltyFactor = 0.94;
   const scaleMultiplier = 1.0 - outerWeightRatio * penaltyFactor;
 
   const maxSafeRadius = Math.min(width, height) * 0.7;
   const baseScale = rMax > 0 ? maxSafeRadius / rMax : 1;
-  const scale = Math.max(0.85, baseScale * scaleMultiplier);
+  const scale = Math.max(0.86, baseScale * scaleMultiplier);
 
   console.log(
     `Centroid: (${cx.toFixed(1)}, ${cy.toFixed(1)}) | ` +
