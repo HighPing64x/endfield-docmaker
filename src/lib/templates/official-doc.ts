@@ -125,7 +125,7 @@ export const officialDocTemplate: TemplateDefinition = {
       .filter((a: Authority) => a.name.trim() !== '')
       .map(
         (a: Authority) =>
-          `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${__logoScales[a.faction] ?? 1} * 100%))`
+          `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${getLogoScales()[a.faction] ?? 1} * 100%))`
       );
 
     const watermarkExt = extOf(v.issuer);
@@ -138,7 +138,7 @@ export const officialDocTemplate: TemplateDefinition = {
   conf-period: none,
   urgen-level: none,
   authorities: (${authEntries.join(', ')},),
-  watermark-icon: image("watermark-${v.issuer}.${watermarkExt}", width: ${__logoScales[v.issuer] ?? 1} * 100%),
+  watermark-icon: image("watermark-${v.issuer}.${watermarkExt}", width: ${getLogoScales()[v.issuer] ?? 1} * 100%),
   issuer: "${issuerName}",
   title: "${v.docTitle}",
   issue-date: datetime(year: ${year}, month: ${month}, day: ${day}),
@@ -159,7 +159,10 @@ ${v.docContent}
  * Shared logo scales set by `typst.svelte.ts` during initialization.
  * Exposed as a module-level mutable reference so templates can read them.
  */
-export let __logoScales: Record<string, number> = {};
+let sharedLogoScales: Record<string, number> = {};
+export function getLogoScales(): Record<string, number> {
+  return sharedLogoScales;
+}
 export function setLogoScales(scales: Record<string, number>) {
-  __logoScales = scales;
+  sharedLogoScales = scales;
 }

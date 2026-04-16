@@ -19,7 +19,7 @@ export interface TestpaperValues {
   docContent: string;
 }
 
-const escapeTypst = (s: string) => s.replace(/"/g, '\\"');
+const escapeTypst = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
 export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',

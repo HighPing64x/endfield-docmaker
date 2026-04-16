@@ -37,9 +37,13 @@
         return `sm:col-span-${span}`;
     }
   }
+
+  const gridColsClass = $derived(
+    cols === 1 ? 'grid-cols-1' : cols === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+  );
 </script>
 
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-{cols}" style:--cols={cols}>
+<div class="grid grid-cols-1 gap-4 {gridColsClass}">
   {#each template.fields as field (field.key)}
     {@const span = colspanClass(field)}
     {#if field.type === 'text'}
