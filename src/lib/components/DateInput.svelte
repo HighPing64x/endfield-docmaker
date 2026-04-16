@@ -106,7 +106,7 @@
     value={value.year}
     oninput={(e) => onInput('year', e)}
     onkeydown={(e) => onKeydown('year', e)}
-    placeholder="196"
+    placeholder="152"
     class={cn(
       'placeholder:text-muted-foreground h-full w-12 bg-transparent px-2.5 text-center text-xs outline-none',
       !yearValid && 'text-destructive'
@@ -122,7 +122,7 @@
     value={value.month}
     oninput={(e) => onInput('month', e)}
     onkeydown={(e) => onKeydown('month', e)}
-    placeholder="01"
+    placeholder="03"
     class={cn(
       'placeholder:text-muted-foreground h-full w-8 bg-transparent px-1 text-center text-xs outline-none',
       !monthValid && 'text-destructive'
@@ -138,7 +138,7 @@
     value={value.day}
     oninput={(e) => onInput('day', e)}
     onkeydown={(e) => onKeydown('day', e)}
-    placeholder="29"
+    placeholder="25"
     class={cn(
       'placeholder:text-muted-foreground h-full w-8 bg-transparent px-1 text-center text-xs outline-none',
       !dayValid() && 'text-destructive'
