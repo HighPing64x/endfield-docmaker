@@ -6,11 +6,13 @@
   let {
     value = $bindable({ year: '', month: '', day: '' }),
     disabled = false,
-    class: className
+    class: className,
+    onchange
   }: {
     value: DateParts;
     disabled?: boolean;
     class?: string;
+    onchange?: (value: DateParts) => void;
   } = $props();
 
   let yearRef: HTMLInputElement | null = $state(null);
@@ -58,6 +60,7 @@
   function onInput(field: keyof DateParts, e: Event) {
     const input = e.target as HTMLInputElement;
     value = { ...value, [field]: input.value };
+    onchange?.(value);
   }
 
   function onKeydown(field: keyof DateParts, e: KeyboardEvent) {

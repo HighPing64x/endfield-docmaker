@@ -24,16 +24,33 @@
   let {
     value = $bindable<Authority[]>([]),
     maxItems = 9,
-    disabled = false
+    disabled = false,
+    onchange
   }: {
     value: Authority[];
     maxItems?: number;
     disabled?: boolean;
+    onchange?: (value: Authority[]) => void;
   } = $props();
 
   let dragIndex = $state<number | null>(null);
   let dragOverIndex = $state<number | null>(null);
   let inputFocused = $state(false);
+
+  function updateFaction(i: number, auth: Authority, faction: string) {
+    value[i] = { ...auth, faction: faction as Authority['faction'] };
+    onchange?.(value);
+  }
+
+  function updateName(i: number, auth: Authority, name: string) {
+    value[i] = { ...auth, name };
+    onchange?.(value);
+  }
+
+  function removeAuthority(i: number) {
+    value = value.filter((_, idx) => idx !== i);
+    onchange?.(value);
+  }
 </script>
 
 <div class="space-y-3">
@@ -52,6 +69,7 @@
               name: pick(authorityNames)
             }
           ];
+          onchange?.(value);
         }}
         {disabled}
       >
@@ -87,6 +105,7 @@
           const [moved] = updated.splice(dragIndex, 1);
           updated.splice(i, 0, moved);
           value = updated;
+          onchange?.(value);
         }
         dragIndex = null;
         dragOverIndex = null;
@@ -109,9 +128,7 @@
         <Select
           type="single"
           value={auth.faction}
-          onValueChange={(v) => {
-            value[i] = { ...auth, faction: v as Authority['faction'] };
-          }}
+          onValueChange={(v) => updateFaction(i, auth, v)}
           {disabled}
         >
           <SelectTrigger class="w-auto shrink-0 rounded-r-none border-r-0">
@@ -125,9 +142,7 @@
         </Select>
         <Input
           value={auth.name}
-          oninput={(e) => {
-            value[i] = { ...auth, name: e.currentTarget.value };
-          }}
+          oninput={(e) => updateName(i, auth, e.currentTarget.value)}
           onfocus={() => (inputFocused = true)}
           onblur={() => (inputFocused = false)}
           {disabled}
@@ -139,9 +154,7 @@
           variant="ghost"
           size="sm"
           class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0 cursor-pointer p-0"
-          onclick={() => {
-            value = value.filter((_, idx) => idx !== i);
-          }}
+          onclick={() => removeAuthority(i)}
           {disabled}
         >
           ✕

@@ -133,15 +133,36 @@
     {:else if field.type === 'date'}
       <div class="space-y-2 {span}">
         <Label>{field.label()}</Label>
-        <DateInput bind:value={values[field.key]} class="w-full" {disabled} />
+        <DateInput
+          value={values[field.key] ?? { year: '', month: '', day: '' }}
+          onchange={(v) => {
+            values = { ...values, [field.key]: v };
+          }}
+          class="w-full"
+          {disabled}
+        />
       </div>
     {:else if field.type === 'authorities'}
       <div class={span}>
-        <AuthoritiesList bind:value={values[field.key]} maxItems={field.maxItems ?? 9} {disabled} />
+        <AuthoritiesList
+          value={values[field.key] ?? []}
+          onchange={(v) => {
+            values = { ...values, [field.key]: v };
+          }}
+          maxItems={field.maxItems ?? 9}
+          {disabled}
+        />
       </div>
     {:else if field.type === 'kv-grid'}
       <div class={span}>
-        <KvGrid bind:value={values[field.key]} label={field.label()} {disabled} />
+        <KvGrid
+          value={values[field.key] ?? []}
+          onchange={(v) => {
+            values = { ...values, [field.key]: v };
+          }}
+          label={field.label()}
+          {disabled}
+        />
       </div>
     {:else if field.type === 'prefixed-input'}
       <div class="space-y-2 {span}">
