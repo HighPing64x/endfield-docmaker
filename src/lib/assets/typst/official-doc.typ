@@ -196,6 +196,16 @@
   show heading: set block(spacing: 0.655em)
 
   show: show-cn-fakebold
+
+  let font = (
+    (name: "Times New Roman", covers: regex("\w")), // 正文中的数字，字母字体
+    (name: "TeX Gyre Termes", covers: regex("\w")), // 西文字体（无 Times New Roman 时）
+    (name: "STIX Two Math", covers: regex("[𝑗𝑓𝑧𝜋∅/±]")), // 𝑓𝑧𝜋∅/± 符号的数学字体
+    "TeX Gyre Termes Math", // 数学字体
+    "FangSong", // 中文字体
+  )
+  set text(font: font)
+  show math.equation: set text(font: font)
   show raw: set text(font: "JetBrains Mono")
   content
 

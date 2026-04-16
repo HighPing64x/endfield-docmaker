@@ -4,9 +4,12 @@ import fontXiaoBiaoSong from '$lib/assets/fonts/FZXIAOBIAOSONG-B05.TTF?url';
 import fontSimFang from '$lib/assets/fonts/SIMFANG.TTF?url';
 import fontSimHei from '$lib/assets/fonts/SIMHEI.TTF?url';
 import fontSimKai from '$lib/assets/fonts/SIMKAI.TTF?url';
-import fontSTSong from '$lib/assets/fonts/STSONG.TTF?url';
+import fontTimesNewRoman from '$lib/assets/fonts/times.ttf?url';
+import fontNotoSans from '$lib/assets/fonts/NotoSansCJKsc-Regular.otf?url';
+import fontNotoSerif from '$lib/assets/fonts/NotoSerifCJK-Regular.ttc?url';
+import fontSTIXTwoMath from '$lib/assets/fonts/STIXTwoMath-Regular.otf?url';
+import fontTeXGyreTermes from '$lib/assets/fonts/texgyretermes-math.otf?url';
 import fontJBMono from '$lib/assets/fonts/JetBrainsMono-VariableFont_wght.ttf?url';
-import fontNewCMMath from '$lib/assets/fonts/NewCMMath-Regular.otf?url';
 
 import rendererWasmUrl from '@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url';
 import compilerWasmUrl from '@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url';
@@ -28,9 +31,12 @@ const fonts: { name: string; url: string }[] = [
   { name: 'SIMFANG.TTF', url: fontSimFang },
   { name: 'SIMHEI.TTF', url: fontSimHei },
   { name: 'SIMKAI.TTF', url: fontSimKai },
-  { name: 'STSONG.TTF', url: fontSTSong },
-  { name: 'JetBrainsMono-VariableFont_wght.ttf', url: fontJBMono },
-  { name: 'NewCMMath-Regular.otf', url: fontNewCMMath }
+  { name: 'times.ttf', url: fontTimesNewRoman },
+  { name: 'NotoSansCJKsc-Regular.otf', url: fontNotoSans },
+  { name: 'NotoSerifCJK-Regular.ttc', url: fontNotoSerif },
+  { name: 'STIXTwoMath-Regular.otf', url: fontSTIXTwoMath },
+  { name: 'texgyretermes-math.otf', url: fontTeXGyreTermes },
+  { name: 'JetBrainsMono-VariableFont_wght.ttf', url: fontJBMono }
 ];
 
 let isInitialized = false;
