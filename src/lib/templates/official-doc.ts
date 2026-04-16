@@ -1,0 +1,165 @@
+import type { TemplateDefinition } from './types';
+import type { Authority, IssuerKey } from '$lib/types';
+import { ISSUERS } from '$lib/constants';
+import { m } from '$lib/paraglide/messages';
+
+export interface OfficialDocValues {
+  issuer: IssuerKey;
+  authorities: Authority[];
+  refNo: string;
+  docTitle: string;
+  issueDate: { year: string; month: string; day: string };
+  docContent: string;
+}
+
+const parseDate = (date: { year: string; month: string; day: string }) => {
+  const year = parseInt(date.year, 10);
+  const month = parseInt(date.month, 10);
+  const day = parseInt(date.day, 10);
+  return {
+    year: isNaN(year) || year <= 0 ? 150 : year,
+    month: isNaN(month) || month < 1 || month > 12 ? 1 : month,
+    day: isNaN(day) || day < 1 || day > 31 ? 1 : day
+  };
+};
+
+export const officialDocTemplate: TemplateDefinition = {
+  id: 'official-doc',
+  name: () => m.template_official_doc(),
+  gridCols: 3,
+  storageVersion: 3,
+  fields: [
+    {
+      type: 'select',
+      key: 'issuer',
+      label: () => m.issuer(),
+      placeholder: () => m.select_issuer(),
+      options: ISSUERS.map((i) => ({
+        value: i.key,
+        label: () => m[`issuer_${i.key}`]()
+      }))
+    },
+    {
+      type: 'authorities',
+      key: 'authorities',
+      label: () => m.authorities(),
+      maxItems: 9
+    },
+    {
+      type: 'textarea',
+      key: 'docTitle',
+      label: () => m.doc_title()
+    },
+    {
+      type: 'date',
+      key: 'issueDate',
+      label: () => m.issue_date(),
+      colspan: 2
+    },
+    {
+      type: 'text',
+      key: 'refNo',
+      label: () => m.ref_no(),
+      colspan: 1
+    },
+    {
+      type: 'textarea',
+      key: 'docContent',
+      label: () => m.doc_content(),
+      placeholder: () => m.doc_content_placeholder(),
+      grow: true
+    }
+  ],
+  defaults: () => ({
+    issuer: ISSUERS[0].key as string,
+    authorities: [
+      { faction: ISSUERS[0].key, name: '纪律检查委员会' },
+      { faction: ISSUERS[0].key, name: '人事管理局' }
+    ] satisfies Authority[],
+    refNo: '1',
+    docTitle: '关于终末地相关人员人事管理\n违规问题的调查处理通报',
+    issueDate: { year: '152', month: '1', day: '29' },
+    docContent: `\
+近期，终末地组织对内部人事管理及干员资格审查工作开展专项巡查，经查发现，在陈千语同志任职审核及后续管理工作中，佩丽卡监督存在履责不严、监管失察等问题，相关行为违反组织人事管理工作制度，对组织管理规范性和公信力造成不良影响。为严肃工作纪律，规范管理程序，现将有关调查情况及处理决定通报如下：
+
+= 经查核实的主要问题
+
+== 任职审核程序执行不严
+
+陈千语同志多次跨地区任职期间，长期未按规定提交完整的学历成绩及学业认证材料。按照《终末地干员管理条例》相关要求，此类情况应立即启动材料复核程序并暂缓任职安排，但佩丽卡监督未及时履行监管职责，该问题未得到有效处置。虽后续补充提交相关材料，审核结果合规，但程序执行的严肃性未得到重视，违反人事审核工作基本要求。
+
+== 存在非正当干预审核工作行为
+
+在核查及问询过程中，经多方印证、综合查实，陈千语同志曾以非正式方式向人事工作人员施加压力，试图干预正常审核工作进程，该行为虽无书面记载，但经查证属实，已违反干员履职基本纪律要求。
+
+本次事件并非单纯的材料提交疏漏问题，而是叠加监督缺位、程序执行不严、非正当干预审核等多重因素形成的人事管理违规问题，性质较为典型，需各单位引以为戒。
+
+= 处理依据及决定
+
+依据《终末地干员管理条例》第三章第4条、《终末地组织人事工作监督管理办法》相关规定，经终末地纪律检查委员会、人事管理局集体研究决定，对相关责任人作出如下处理：
+
+== 陈千语干员
+
+其行为违反干员任职审核相关规定，且存在干预正常工作进程的违规行为，情节属实。自本通报发布之日起，撤销其"六星高级精英干员"资格，调整至"五星精英干员"序列管理，按五星精英干员相关规定核定岗位待遇及工作权限。
+
+== 佩丽卡监督
+
+其在人事审核工作中未严格履行监管职责，履责不严、监管失察，是本次违规问题发生的重要原因，情节属实。对其作出诫勉谈话处理，在全组织范围内予以通报批评，责令其作出书面深刻检查，限期整改履职中存在的问题，并将整改情况报纪律检查委员会及人事管理局备案。
+
+= 工作要求
+
+各单位要以本次事件为警示，切实强化组织人事管理工作责任，严格执行干员资格审查、任职审核等各项工作程序，做到材料审核全流程留痕、监管责任全覆盖落实。要加强干员纪律教育，引导全体干员自觉遵守工作纪律，坚决杜绝干预正常工作进程、违反审核程序等行为。各监督岗位人员要切实履行监管职责，强化工作全过程监督，对发现的问题及时处置、闭环管理。
+
+本通报自发布之日起执行，请各单位严格遵照落实。
+`
+  }),
+  generateTypstSource: (values: Record<string, unknown>) => {
+    const v = values as unknown as OfficialDocValues;
+    const { year, month, day } = parseDate(v.issueDate);
+    const issuerName = m[`issuer_${v.issuer as IssuerKey}`]();
+
+    const extOf = (key: string) =>
+      ISSUERS.find((i) => i.key === key)?.type === 'svg' ? 'svg' : 'png';
+
+    const authEntries = (v.authorities ?? [])
+      .filter((a: Authority) => a.name.trim() !== '')
+      .map(
+        (a: Authority) =>
+          `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${__logoScales[a.faction] ?? 1} * 100%))`
+      );
+
+    const watermarkExt = extOf(v.issuer);
+    return `
+#import "official-doc.typ": *
+
+#show: official-doc.with(
+  ref-no: "${v.refNo}",
+  conf-level: none,
+  conf-period: none,
+  urgen-level: none,
+  authorities: (${authEntries.join(', ')},),
+  watermark-icon: image("watermark-${v.issuer}.${watermarkExt}", width: ${__logoScales[v.issuer] ?? 1} * 100%),
+  issuer: "${issuerName}",
+  title: "${v.docTitle}",
+  issue-date: datetime(year: ${year}, month: ${month}, day: ${day}),
+  seed: ${Date.now()},
+)
+
+${v.docContent}
+`;
+  },
+  getFileName: (values: Record<string, unknown>) => {
+    const v = values as unknown as OfficialDocValues;
+    const issuerName = m[`issuer_${v.issuer as IssuerKey}`]();
+    return `${issuerName}〔${v.issueDate.year}〕${v.refNo}号 ${v.docTitle.replaceAll('\n', '')}.pdf`;
+  }
+};
+
+/**
+ * Shared logo scales set by `typst.svelte.ts` during initialization.
+ * Exposed as a module-level mutable reference so templates can read them.
+ */
+export let __logoScales: Record<string, number> = {};
+export function setLogoScales(scales: Record<string, number>) {
+  __logoScales = scales;
+}

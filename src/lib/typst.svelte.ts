@@ -20,9 +20,8 @@ import type {
 import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
-import type { IssuerKey, Authority } from './types';
 import { ISSUERS } from './constants';
-import { m } from '$lib/paraglide/messages';
+import { setLogoScales } from '$lib/templates/official-doc';
 
 const fonts: { name: string; url: string }[] = [
   { name: 'FZXIAOBIAOSONG-B05.TTF', url: fontXiaoBiaoSong },
@@ -40,6 +39,8 @@ export const loadingState: { status: 'loading_fonts' | 'loading_wasm' | 'loading
   $state({ status: '' });
 
 const logoScales: Record<string, number> = {};
+// Expose logo scales to template definitions
+const syncLogoScales = () => setLogoScales({ ...logoScales });
 
 // let isFontsLoaded = false;
 // let fontsLoadPromise: Promise<{ fileName: string; url: string }[]> | null = null;
@@ -205,6 +206,7 @@ export const initializeTypst = async () => {
       );
 
       isInitialized = true;
+      syncLogoScales();
       loadingState.status = '';
       console.log(`Typst initialized`);
     } catch (e) {
@@ -229,50 +231,6 @@ export const waitForTypst = async () => {
   } else {
     await initializeTypst();
   }
-};
-
-export const getTypstDocument = ({
-  issuer,
-  authorities,
-  docTitle,
-  refNo,
-  issueDate: { year, month, day },
-  docContent
-}: {
-  issuer: IssuerKey;
-  authorities: Authority[];
-  docTitle: string;
-  refNo: string;
-  issueDate: { year: number; month: number; day: number };
-  docContent: string;
-}): string => {
-  const extOf = (key: string) =>
-    ISSUERS.find((i) => i.key === key)?.type === 'svg' ? 'svg' : 'png';
-  const authEntries = authorities
-    .filter((a) => a.name.trim() !== '')
-    .map(
-      (a) =>
-        `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${logoScales[a.faction] ?? 1} * 100%))`
-    );
-  const watermarkExt = extOf(issuer);
-  return `
-#import "official-doc.typ": *
-
-#show: official-doc.with(
-  ref-no: "${refNo}",
-  conf-level: none,
-  conf-period: none,
-  urgen-level: none,
-  authorities: (${authEntries.join(', ')},),
-  watermark-icon: image("watermark-${issuer}.${watermarkExt}", width: ${logoScales[issuer] ?? 1} * 100%),
-  issuer: "${m[`issuer_${issuer}`]()}",
-  title: "${docTitle}",
-  issue-date: datetime(year: ${year}, month: ${month}, day: ${day}),
-  seed: ${Date.now()},
-)
-
-${docContent}
-`;
 };
 
 export default typst;
