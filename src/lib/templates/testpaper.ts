@@ -1,11 +1,12 @@
 import type { TemplateDefinition } from './types';
 import type { IssuerKey } from '$lib/types';
-import { ISSUERS } from '$lib/constants';
+import { ISSUERS, getLogoScales, issuerExt } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
 import type { KvEntry } from '$lib/components/KvGrid.svelte';
 
 export interface TestpaperValues {
   issuer: IssuerKey;
+  titlePrefix: IssuerKey;
   year: string;
   titleSuffix: string;
   subject: string;
@@ -30,7 +31,7 @@ export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
   gridCols: 3,
-  storageVersion: 1,
+  storageVersion: 2,
   fields: [
     {
       type: 'select',
@@ -39,7 +40,7 @@ export const testpaperTemplate: TemplateDefinition = {
       placeholder: () => m.select_issuer(),
       options: ISSUERS.map((i) => ({
         value: i.key,
-        label: () => m[`prefix_${i.key}`]()
+        label: () => m[`issuer_${i.key}`]()
       })),
       colspan: 1
     },
@@ -61,7 +62,7 @@ export const testpaperTemplate: TemplateDefinition = {
     {
       type: 'prefixed-input',
       key: 'titleSuffix',
-      prefixKey: 'issuer',
+      prefixKey: 'titlePrefix',
       label: () => m.testpaper_title(),
       prefixes: ISSUERS.map((i) => ({
         value: i.key,
@@ -123,6 +124,7 @@ export const testpaperTemplate: TemplateDefinition = {
   ],
   defaults: () => ({
     issuer: ISSUERS[0].key as string,
+    titlePrefix: ISSUERS[0].key as string,
     year: '2025',
     titleSuffix: '期末考试I卷',
     subject: '数学',
@@ -150,7 +152,7 @@ export const testpaperTemplate: TemplateDefinition = {
   }),
   generateTypstSource: (values: Record<string, unknown>) => {
     const v = values as unknown as TestpaperValues;
-    const prefix = m[`prefix_${v.issuer as IssuerKey}`]();
+    const prefix = m[`prefix_${v.titlePrefix as IssuerKey}`]();
     const year = parseYear(v.year);
     const fullTitle = `${year}${prefix}${v.titleSuffix}`;
 
@@ -158,6 +160,9 @@ export const testpaperTemplate: TemplateDefinition = {
       .filter((e: KvEntry) => e.key.trim() !== '')
       .map((e: KvEntry) => `${escapeTypst(e.key)}: "${escapeTypst(e.value)}"`)
       .join(', ');
+
+    const watermarkExt = issuerExt(v.issuer);
+    const watermarkScale = getLogoScales()[v.issuer] ?? 1;
 
     const lines: string[] = [
       '#import "@preview/ezexam:0.3.1": *',
@@ -168,6 +173,8 @@ export const testpaperTemplate: TemplateDefinition = {
       `  show-answer: ${v.showAnswer ? 'true' : 'false'},`,
       `  par-justify: ${v.parJustify ? 'true' : 'false'},`,
       ')',
+      '',
+      `#set page(background: place(center + horizon, rotate(24deg, opacity(4%, image("watermark-${v.issuer}.${watermarkExt}", width: ${watermarkScale} * 300%)))))`,
       '',
       `#chapter[${escapeTypst(fullTitle)}]`,
       `#title[${escapeTypst(fullTitle)}]`,
@@ -200,7 +207,7 @@ export const testpaperTemplate: TemplateDefinition = {
   },
   getFileName: (values: Record<string, unknown>) => {
     const v = values as unknown as TestpaperValues;
-    const prefix = m[`prefix_${v.issuer as IssuerKey}`]();
+    const prefix = m[`prefix_${v.titlePrefix as IssuerKey}`]();
     const year = parseYear(v.year);
     return `${year}${prefix}${v.titleSuffix} ${v.subject}.pdf`;
   }

@@ -23,8 +23,7 @@ import type {
 import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
-import { ISSUERS } from './constants';
-import { setLogoScales } from '$lib/templates/official-doc';
+import { ISSUERS, setLogoScales } from './constants';
 
 const fonts: { name: string; url: string }[] = [
   { name: 'FZXIAOBIAOSONG-B05.TTF', url: fontXiaoBiaoSong },

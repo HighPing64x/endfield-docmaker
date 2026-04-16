@@ -3,12 +3,11 @@
   import { Input } from '$lib/components/ui/input';
   import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
   import Button from '$lib/components/ui/button/button.svelte';
+  import DraggableList from '$lib/components/DraggableList.svelte';
   import { ISSUERS } from '$lib/constants';
   import { pick } from '$lib/utils';
   import type { Authority } from '$lib/types';
   import PlusIcon from '@lucide/svelte/icons/plus';
-  import GripVerticalIcon from '@lucide/svelte/icons/grip-vertical';
-  import { slide } from 'svelte/transition';
 
   const authorityNames = [
     '纪律检查委员会',
@@ -33,10 +32,6 @@
     onchange?: (value: Authority[]) => void;
   } = $props();
 
-  let dragIndex = $state<number | null>(null);
-  let dragOverIndex = $state<number | null>(null);
-  let inputFocused = $state(false);
-
   function updateFaction(i: number, auth: Authority, faction: string) {
     value[i] = { ...auth, faction: faction as Authority['faction'] };
     onchange?.(value);
@@ -47,8 +42,8 @@
     onchange?.(value);
   }
 
-  function removeAuthority(i: number) {
-    value = value.filter((_, idx) => idx !== i);
+  function handleListChange(newItems: Authority[]) {
+    value = newItems;
     onchange?.(value);
   }
 </script>
@@ -78,53 +73,9 @@
       </Button>
     {/if}
   </div>
-  {#each value as auth, i (i)}
-    <div
-      class="flex items-center gap-2 rounded-md transition-colors {dragOverIndex === i &&
-      dragIndex !== null &&
-      dragIndex !== i
-        ? 'bg-muted/60'
-        : ''}"
-      draggable={!inputFocused && !disabled && value.length > 1}
-      ondragstart={(e) => {
-        dragIndex = i;
-        e.dataTransfer!.effectAllowed = 'move';
-      }}
-      ondragover={(e) => {
-        e.preventDefault();
-        e.dataTransfer!.dropEffect = 'move';
-        dragOverIndex = i;
-      }}
-      ondragleave={() => {
-        if (dragOverIndex === i) dragOverIndex = null;
-      }}
-      ondrop={(e) => {
-        e.preventDefault();
-        if (dragIndex !== null && dragIndex !== i) {
-          const updated = [...value];
-          const [moved] = updated.splice(dragIndex, 1);
-          updated.splice(i, 0, moved);
-          value = updated;
-          onchange?.(value);
-        }
-        dragIndex = null;
-        dragOverIndex = null;
-      }}
-      ondragend={() => {
-        dragIndex = null;
-        dragOverIndex = null;
-      }}
-      role="listitem"
-      transition:slide={{ duration: 80 }}
-    >
-      {#if value.length > 1}
-        <span
-          class="text-muted-foreground/60 hover:text-muted-foreground flex shrink-0 cursor-grab active:cursor-grabbing"
-        >
-          <GripVerticalIcon class="size-4" />
-        </span>
-      {/if}
-      <div class="flex min-w-0 flex-1">
+  <DraggableList items={value} onchange={handleListChange} {disabled}>
+    {#snippet renderItem(auth, i)}
+      <div class="flex">
         <Select
           type="single"
           value={auth.faction}
@@ -143,23 +94,10 @@
         <Input
           value={auth.name}
           oninput={(e) => updateName(i, auth, e.currentTarget.value)}
-          onfocus={() => (inputFocused = true)}
-          onblur={() => (inputFocused = false)}
           {disabled}
           class="rounded-l-none"
         />
       </div>
-      {#if value.length > 1}
-        <Button
-          variant="ghost"
-          size="sm"
-          class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0 cursor-pointer p-0"
-          onclick={() => removeAuthority(i)}
-          {disabled}
-        >
-          ✕
-        </Button>
-      {/if}
-    </div>
-  {/each}
+    {/snippet}
+  </DraggableList>
 </div>

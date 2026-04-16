@@ -1,6 +1,6 @@
 import type { TemplateDefinition } from './types';
 import type { Authority, IssuerKey } from '$lib/types';
-import { ISSUERS } from '$lib/constants';
+import { ISSUERS, getLogoScales, issuerExt } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
 
 export interface OfficialDocValues {
@@ -120,17 +120,14 @@ export const officialDocTemplate: TemplateDefinition = {
     const { year, month, day } = parseDate(v.issueDate);
     const issuerName = m[`issuer_${v.issuer as IssuerKey}`]();
 
-    const extOf = (key: string) =>
-      ISSUERS.find((i) => i.key === key)?.type === 'svg' ? 'svg' : 'png';
-
     const authEntries = (v.authorities ?? [])
       .filter((a: Authority) => a.name.trim() !== '')
       .map(
         (a: Authority) =>
-          `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${getLogoScales()[a.faction] ?? 1} * 100%))`
+          `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${issuerExt(a.faction)}", width: ${getLogoScales()[a.faction] ?? 1} * 100%))`
       );
 
-    const watermarkExt = extOf(v.issuer);
+    const watermarkExt = issuerExt(v.issuer);
     return `
 #import "official-doc.typ": *
 
@@ -156,15 +153,3 @@ ${v.docContent}
     return `${issuerName}〔${v.issueDate.year}〕${v.refNo}号 ${v.docTitle.replaceAll('\n', '')}.pdf`;
   }
 };
-
-/**
- * Shared logo scales set by `typst.svelte.ts` during initialization.
- * Exposed as a module-level mutable reference so templates can read them.
- */
-let sharedLogoScales: Record<string, number> = {};
-export function getLogoScales(): Record<string, number> {
-  return sharedLogoScales;
-}
-export function setLogoScales(scales: Record<string, number>) {
-  sharedLogoScales = scales;
-}
