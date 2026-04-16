@@ -21,6 +21,11 @@ export interface TestpaperValues {
 
 const escapeTypst = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
+const parseYear = (raw: string): number => {
+  const n = parseInt(raw, 10);
+  return isNaN(n) || n <= 0 ? 2025 : n;
+};
+
 export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
@@ -145,8 +150,7 @@ export const testpaperTemplate: TemplateDefinition = {
   generateTypstSource: (values: Record<string, unknown>) => {
     const v = values as unknown as TestpaperValues;
     const prefix = m[`prefix_${v.issuer as IssuerKey}`]();
-    const yearNum = parseInt(v.year, 10);
-    const year = isNaN(yearNum) || yearNum <= 0 ? 2025 : yearNum;
+    const year = parseYear(v.year);
     const fullTitle = `${year}${prefix}${v.titleSuffix}`;
 
     const kvEntries = (v.examInfo ?? [])
@@ -196,8 +200,7 @@ export const testpaperTemplate: TemplateDefinition = {
   getFileName: (values: Record<string, unknown>) => {
     const v = values as unknown as TestpaperValues;
     const prefix = m[`prefix_${v.issuer as IssuerKey}`]();
-    const yearNum = parseInt(v.year, 10);
-    const year = isNaN(yearNum) || yearNum <= 0 ? 2025 : yearNum;
+    const year = parseYear(v.year);
     return `${year}${prefix}${v.titleSuffix} ${v.subject}.pdf`;
   }
 };
