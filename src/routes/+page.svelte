@@ -35,6 +35,8 @@
 
   let isReady = $state(false);
   let isGenerating = $state(false);
+  let canDownload = $state(false);
+  let canShare = $state(false);
 
   let issuer = $state<(typeof ISSUERS)[number]['key']>(ISSUERS[0].key);
   let issuerName = $derived(m[`issuer_${issuer}`]());
@@ -126,6 +128,7 @@
   };
 
   let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  let pdfBlob: Blob | undefined = $state(undefined);
   let pdf: string | undefined = $state(undefined);
   let compileError: string | undefined = $state(undefined);
 
@@ -160,7 +163,21 @@
       const data = await typst.pdf();
       if (!data) return;
       const blob = new Blob([new Uint8Array(data)], { type: 'application/pdf' });
+      pdfBlob = blob;
       pdf = URL.createObjectURL(blob);
+
+      const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if (typeof navigator !== 'undefined' && 'canShare' in navigator) {
+        try {
+          canShare = navigator.canShare({ files: [file] });
+        } catch {
+          canShare = false;
+        }
+      } else {
+        canShare = false;
+      }
+
       compileError = undefined;
       saveToStorage();
     } catch (e) {
@@ -169,6 +186,24 @@
     } finally {
       isGenerating = false;
     }
+  };
+
+  const handleShare = async () => {
+    if (!pdfBlob || !canShare) return;
+    const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
+    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+    try {
+      await navigator.share({ files: [file], title: filename });
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+      console.error('Error sharing:', e);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!pdf) return;
+    const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
+    triggerDownload(pdf, filename);
   };
 
   $effect(() => {
@@ -187,6 +222,9 @@
 
   onMount(async () => {
     loadFromStorage();
+    if (typeof document !== 'undefined') {
+      canDownload = 'download' in document.createElement('a');
+    }
     await waitForTypst();
   });
 </script>
@@ -432,19 +470,28 @@
           >
             {m.open_in_new_tab()}
           </Button>
-          <Button
-            variant="outline"
-            class="cursor-pointer"
-            size="sm"
-            onclick={() =>
-              triggerDownload(
-                pdf!,
-                `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`
-              )}
-            disabled={!pdf}
-          >
-            {m.download()}
-          </Button>
+          {#if canDownload}
+            <Button
+              variant="outline"
+              class="cursor-pointer"
+              size="sm"
+              onclick={handleDownload}
+              disabled={!pdf}
+            >
+              {m.download()}
+            </Button>
+          {/if}
+          {#if canShare}
+            <Button
+              variant="outline"
+              class="cursor-pointer"
+              size="sm"
+              onclick={handleShare}
+              disabled={!pdf}
+            >
+              {m.share()}
+            </Button>
+          {/if}
         </div>
       </CardHeader>
       <CardContent class="min-h-150 flex-1 p-0 pb-0">
