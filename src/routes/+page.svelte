@@ -145,6 +145,9 @@
     };
   };
 
+  const getFileName = () =>
+    `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
+
   const generatePDF = async () => {
     isGenerating = true;
     try {
@@ -166,8 +169,7 @@
       pdfBlob = blob;
       pdf = URL.createObjectURL(blob);
 
-      const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
-      const file = new File([blob], filename, { type: 'application/pdf' });
+      const file = new File([blob], getFileName(), { type: 'application/pdf' });
       if (typeof navigator !== 'undefined' && 'canShare' in navigator) {
         try {
           canShare = navigator.canShare({ files: [file] });
@@ -190,10 +192,9 @@
 
   const handleShare = async () => {
     if (!pdfBlob || !canShare) return;
-    const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
-    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+    const file = new File([pdfBlob], getFileName(), { type: 'application/pdf' });
     try {
-      await navigator.share({ files: [file], title: filename });
+      await navigator.share({ files: [file] });
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
       console.error('Error sharing:', e);
@@ -202,8 +203,7 @@
 
   const handleDownload = () => {
     if (!pdf) return;
-    const filename = `${issuerName}〔${issueDate.year}〕${refNo}号 ${docTitle.replaceAll('\n', '')}.pdf`;
-    triggerDownload(pdf, filename);
+    triggerDownload(pdf, getFileName());
   };
 
   $effect(() => {
