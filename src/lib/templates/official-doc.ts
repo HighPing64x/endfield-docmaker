@@ -48,7 +48,8 @@ export const officialDocTemplate: TemplateDefinition = {
     {
       type: 'textarea',
       key: 'docTitle',
-      label: () => m.doc_title()
+      label: () => m.doc_title(),
+      minHeight: 0
     },
     {
       type: 'date',
@@ -67,7 +68,8 @@ export const officialDocTemplate: TemplateDefinition = {
       key: 'docContent',
       label: () => m.doc_content(),
       placeholder: () => m.doc_content_placeholder(),
-      grow: true
+      grow: true,
+      minHeight: 40
     }
   ],
   defaults: () => ({

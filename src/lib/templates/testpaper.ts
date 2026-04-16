@@ -117,7 +117,8 @@ export const testpaperTemplate: TemplateDefinition = {
       key: 'docContent',
       label: () => m.testpaper_content(),
       placeholder: () => m.testpaper_content_placeholder(),
-      grow: true
+      grow: true,
+      minHeight: 40
     }
   ],
   defaults: () => ({
@@ -159,7 +160,7 @@ export const testpaperTemplate: TemplateDefinition = {
       .join(', ');
 
     const lines: string[] = [
-      '#import "@preview/ezexam:0.3.2": *',
+      '#import "@preview/ezexam:0.3.1": *',
       '',
       '#show: setup.with(',
       '  mode: EXAM,',

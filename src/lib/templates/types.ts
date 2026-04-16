@@ -23,6 +23,11 @@ export interface TextareaField extends BaseField {
   placeholder?: () => string;
   /** When `true` the field uses `flex-1` to fill remaining space. */
   grow?: boolean;
+  /**
+   * Tailwind `min-h-*` value to apply to the textarea.
+   * e.g. 0 for `min-h-0`, 40 for `min-h-40`.
+   */
+  minHeight?: number;
 }
 
 export interface SelectField extends BaseField {
