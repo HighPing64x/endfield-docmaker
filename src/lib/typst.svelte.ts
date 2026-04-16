@@ -133,6 +133,15 @@ export const initializeTypst = async () => {
   if (initializationPromise) {
     return initializationPromise;
   }
+  if (dev) {
+    const globalWithTypst = globalThis as typeof globalThis & {
+      typst?: typeof initializationPromise;
+    };
+    if (globalWithTypst.typst) {
+      initializationPromise = globalWithTypst.typst;
+      return initializationPromise;
+    }
+  }
 
   if (isInitialized) {
     return;
@@ -205,6 +214,11 @@ export const initializeTypst = async () => {
     }
   })();
 
+  if (dev) {
+    (globalThis as typeof globalThis & { typst?: typeof initializationPromise }).typst =
+      initializationPromise;
+  }
+
   return initializationPromise;
 };
 
@@ -238,7 +252,7 @@ export const getTypstDocument = ({
     .filter((a) => a.name.trim() !== '')
     .map(
       (a) =>
-        `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${(logoScales[issuer] ?? 1) * 100}%))`
+        `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${logoScales[a.faction] ?? 1} * 100%))`
     );
   const watermarkExt = extOf(issuer);
   return `
@@ -250,7 +264,7 @@ export const getTypstDocument = ({
   conf-period: none,
   urgen-level: none,
   authorities: (${authEntries.join(', ')},),
-  watermark-icon: image("watermark-${issuer}.${watermarkExt}", width: ${(logoScales[issuer] ?? 1) * 100}%),
+  watermark-icon: image("watermark-${issuer}.${watermarkExt}", width: ${logoScales[issuer] ?? 1} * 100%),
   issuer: "${m[`issuer_${issuer}`]()}",
   title: "${docTitle}",
   issue-date: datetime(year: ${year}, month: ${month}, day: ${day}),

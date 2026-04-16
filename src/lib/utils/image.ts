@@ -17,7 +17,7 @@ const computeCentroid = (
   data: Uint8ClampedArray,
   width: number,
   height: number
-): { x: number; y: number; r: number; totalWeight: number } => {
+): { x: number; y: number; scale: number; totalWeight: number } => {
   // 1. Check if grayscale
   let isGrayscale = true;
   outer: for (let y = 0; y < height; y++) {
@@ -54,12 +54,11 @@ const computeCentroid = (
     }
   }
 
-  if (totalWeight === 0) return { x: 0, y: 0, r: 0, totalWeight: 0 };
+  if (totalWeight === 0) return { x: 0, y: 0, scale: 1, totalWeight: 0 };
 
   const cx = sumX / totalWeight;
   const cy = sumY / totalWeight;
 
-  // Find the maximum possible distance to any of the 4 corners of the image
   const maxDist = Math.ceil(
     Math.max(
       Math.sqrt(cx * cx + cy * cy),
@@ -80,33 +79,55 @@ const computeCentroid = (
         const dx = x - cx;
         const dy = y - cy;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const penalty = Math.sqrt(1 - Math.pow(dist / maxDist, 3));
-
-        distanceBins[Math.ceil(dist)] += weight * penalty;
+        distanceBins[Math.ceil(dist)] += weight;
       }
       offset += 4;
     }
   }
 
-  // 4. Find the exact circular radius for the percentile
-  const percentile = 0.95;
-  const targetWeight = distanceBins.reduce((sum, w) => sum + w, 0) * percentile;
+  // 4. Find the effective boundary of the logo
   let cumulativeWeight = 0;
-  let r: number;
+  const targetMaxWeight = totalWeight * 0.995;
+  let rMax = 1;
 
-  // Accumulate buckets starting from the center (r = 0) outwards
-  for (r = 0; r < distanceBins.length; r++) {
+  for (let r = 0; r < distanceBins.length; r++) {
     cumulativeWeight += distanceBins[r];
-    if (cumulativeWeight >= targetWeight) {
+    if (cumulativeWeight >= targetMaxWeight) {
+      rMax = r;
       break;
     }
   }
 
+  // 5. Calculate periphery weight ratio & determine final scale
+  // Define what counts as the "core" circle
+  const coreFraction = 0.7;
+  const rCore = rMax * coreFraction;
+
+  let outerWeight = 0;
+  for (let r = 0; r <= rMax; r++) {
+    if (r > rCore) {
+      outerWeight += distanceBins[r];
+    }
+  }
+
+  // The ratio of ink outside the core vs total ink
+  const outerWeightRatio = outerWeight / targetMaxWeight;
+
+  // Penalty Factor: How aggressively to shrink logos with heavy outer edges.
+  const penaltyFactor = 0.94;
+  const scaleMultiplier = 1.0 - outerWeightRatio * penaltyFactor;
+
+  const maxSafeRadius = Math.min(width, height) * 0.7;
+  const baseScale = rMax > 0 ? maxSafeRadius / rMax : 1;
+  const scale = Math.max(0.86, baseScale * scaleMultiplier);
+
   console.log(
-    `Centroid at (${cx.toFixed(2)}, ${cy.toFixed(2)}), circular radius for ${percentile * 100}% weight: ${r}px`
+    `Centroid: (${cx.toFixed(1)}, ${cy.toFixed(1)}) | ` +
+      `Max Radius: ${rMax}px | Outer Ink Ratio: ${(outerWeightRatio * 100).toFixed(1)}% | ` +
+      `Scale Multiplier: ${scaleMultiplier.toFixed(2)}`
   );
 
-  return { x: cx, y: cy, r, totalWeight };
+  return { x: cx, y: cy, scale, totalWeight };
 };
 
 /**
@@ -124,10 +145,9 @@ const recenterImage = (img: HTMLImageElement): { canvas: OffscreenCanvas; scale:
   const {
     x: centroidX,
     y: centroidY,
-    r: innerRadius,
+    scale,
     totalWeight
   } = computeCentroid(data, tmp.width, tmp.height);
-  const scale = innerRadius > 0 ? Math.min(tmp.width, tmp.height) / (innerRadius * 2) : 1;
 
   if (totalWeight === 0) return { canvas: tmp, scale };
 
@@ -179,10 +199,9 @@ export const recenterSvg = async (raw: string): Promise<{ svg: string; scale: nu
     const {
       x: centroidPxX,
       y: centroidPxY,
-      r: innerRadius,
+      scale,
       totalWeight
     } = computeCentroid(data, canvas.width, canvas.height);
-    const scale = innerRadius > 0 ? Math.min(canvas.width, canvas.height) / (innerRadius * 2) : 1;
 
     if (totalWeight === 0) return { svg: raw, scale };
 
