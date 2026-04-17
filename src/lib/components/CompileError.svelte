@@ -33,11 +33,8 @@
       while ((match = diagRegex.exec(trimmed)) !== null) {
         const severity = match[1] as 'Error' | 'Warning';
         const message = unescapeString(match[2]);
-        const trace = parseCommaSeparated(match[3]);
-        const hints = parseCommaSeparated(match[4]).map((h) => {
-          const quoted = h.match(/^"((?:[^"\\]|\\.)*)"$/);
-          return quoted ? unescapeString(quoted[1]) : h;
-        });
+        const trace = JSON.parse(`[${match[3]}]`);
+        const hints = JSON.parse(`[${match[4]}]`);
         results.push({ severity, message, trace, hints });
       }
 
@@ -49,15 +46,6 @@
 
   function unescapeString(s: string): string {
     return s.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-  }
-
-  function parseCommaSeparated(raw: string): string[] {
-    const trimmed = raw.trim();
-    if (!trimmed) return [];
-    return trimmed
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
   }
 
   /** Deduplicate diagnostics by severity + message, keeping count. */
@@ -84,18 +72,20 @@
 </script>
 
 <div class="flex flex-col gap-2 p-6">
-  <div class="flex items-center justify-between">
-    <p class="text-destructive text-sm font-medium">{m.compile_error()}</p>
+  <div class="flex items-start justify-between">
+    <div class="flex flex-col gap-1">
+      <p class="text-destructive text-sm font-medium">{m.compile_error()}</p>
+      <p class="text-muted-foreground text-xs">{m.compile_error_desc()}</p>
+    </div>
     {#if diagnostics}
       <div class="flex items-center gap-2">
         <Switch bind:checked={structured} />
         <Label class="text-muted-foreground cursor-pointer text-xs"
-          >{m.compile_error_structured()}</Label
+          >{m.compile_error_structured_output()}</Label
         >
       </div>
     {/if}
   </div>
-  <p class="text-muted-foreground text-xs">{m.compile_error_desc()}</p>
 
   {#if structured && deduped}
     <div class="flex flex-col gap-2">
@@ -104,8 +94,14 @@
           {#each errors as diag (diag.message)}
             <div
               class="bg-destructive/10 text-destructive flex items-start gap-2 px-3 py-2 text-xs"
+              class:items-center={diag.trace.length === 0 && diag.hints.length === 0}
             >
-              <WarningCircleIcon class="mt-0.5 size-4 shrink-0" weight="fill" />
+              <WarningCircleIcon
+                class="{diag.trace.length === 0 && diag.hints.length === 0
+                  ? ''
+                  : 'mt-0.5'} size-4 shrink-0"
+                weight="fill"
+              />
               <div class="min-w-0 flex-1">
                 <span class="font-medium">{diag.message}</span>
                 {#if diag.count > 1}
@@ -131,8 +127,14 @@
           {#each warnings as diag (diag.message)}
             <div
               class="flex items-start gap-2 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
+              class:items-center={diag.trace.length === 0 && diag.hints.length === 0}
             >
-              <WarningIcon class="mt-0.5 size-4 shrink-0" weight="fill" />
+              <WarningIcon
+                class="{diag.trace.length === 0 && diag.hints.length === 0
+                  ? ''
+                  : 'mt-0.5'} size-4 shrink-0"
+                weight="fill"
+              />
               <div class="min-w-0 flex-1">
                 <span class="font-medium">{diag.message}</span>
                 {#if diag.count > 1}

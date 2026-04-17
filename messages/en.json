@@ -5,7 +5,7 @@
   "authorities": "Authorities",
   "compile_error": "Compilation Error",
   "compile_error_desc": "An error occurred while generating the document:",
-  "compile_error_structured": "Structured",
+  "compile_error_structured_output": "Structured Output",
   "doc_content": "Document Content",
   "doc_content_placeholder": "Enter document content here...",
   "doc_title": "Document Title",

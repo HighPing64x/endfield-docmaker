@@ -5,7 +5,7 @@
   "authorities": "签发机构",
   "compile_error": "编译错误",
   "compile_error_desc": "生成文档时发生错误：",
-  "compile_error_structured": "结构化",
+  "compile_error_structured_output": "结构化输出",
   "doc_content": "文件正文",
   "doc_content_placeholder": "在此输入文件内容...",
   "doc_title": "文件标题",
