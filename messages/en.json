@@ -9,6 +9,8 @@
   "doc_content_placeholder": "Enter document content here...",
   "doc_title": "Document Title",
   "download": "Download",
+  "file_add": "Add File",
+  "file_list": "Files",
   "generating": "Generating",
   "invalid_date": "Invalid date",
   "issue_date": "Issue Date (Talosian Calendar)",

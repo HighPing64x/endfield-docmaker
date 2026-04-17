@@ -64,6 +64,11 @@ export const officialDocTemplate: TemplateDefinition = {
       colspan: 1
     },
     {
+      type: 'file-list',
+      key: 'files',
+      label: () => m.file_list()
+    },
+    {
       type: 'textarea',
       key: 'docContent',
       label: () => m.doc_content(),

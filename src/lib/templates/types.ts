@@ -61,6 +61,10 @@ export interface KvGridField extends BaseField {
   type: 'kv-grid';
 }
 
+export interface FileListField extends BaseField {
+  type: 'file-list';
+}
+
 export interface PrefixedInputField extends BaseField {
   type: 'prefixed-input';
   prefixKey: string;
@@ -83,6 +87,7 @@ export type FormField =
   | DateField
   | AuthoritiesField
   | KvGridField
+  | FileListField
   | PrefixedInputField
   | CustomField;
 

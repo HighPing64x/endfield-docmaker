@@ -7,19 +7,24 @@
   import DateInput from '$lib/components/DateInput.svelte';
   import AuthoritiesList from '$lib/components/AuthoritiesList.svelte';
   import KvGrid from '$lib/components/KvGrid.svelte';
+  import FileList from '$lib/components/FileList.svelte';
   import type { FormField, TemplateDefinition } from '$lib/templates/types';
 
   let {
     template,
+    templateId,
     values = {},
     disabled = false,
-    onchange
+    onchange,
+    onfileschange
   }: {
     template: TemplateDefinition;
+    templateId: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     values: Record<string, any>;
     disabled?: boolean;
-    onchange?: (values: Record<string, unknown>) => void;
+    onchange?: (values: Record<string, unknown>, options?: { debounce?: boolean }) => void;
+    onfileschange?: () => void;
   } = $props();
 
   const cols = $derived(template.gridCols ?? 3);
@@ -68,8 +73,8 @@
     }
   }
 
-  function update(key: string, val: unknown) {
-    onchange?.({ ...values, [key]: val });
+  function update(key: string, val: unknown, debounce = false) {
+    onchange?.({ ...values, [key]: val }, { debounce });
   }
 
   const gridColsClass = $derived(
@@ -85,10 +90,13 @@
 
 <div class="flex flex-1 flex-col gap-4">
   <div class="grid grid-cols-1 gap-4 {gridColsClass} shrink-0">
-    {#each template.fields.filter((f) => !(f.type === 'textarea' && f.grow)) as field (field.key)}
+    {#each template.fields.filter((f) => !(f.type === 'textarea' && f.grow) && f.type !== 'file-list') as field (field.key)}
       {@render formField(field)}
     {/each}
   </div>
+  {#each template.fields.filter((f) => f.type === 'file-list') as field (field.key)}
+    {@render formField(field)}
+  {/each}
   {#each template.fields.filter((f) => f.type === 'textarea' && f.grow) as field (field.key)}
     {@render formField(field)}
   {/each}
@@ -101,7 +109,7 @@
       <Label>{field.label()}</Label>
       <Input
         value={typeof values[field.key] === 'string' ? (values[field.key] as string) : ''}
-        oninput={(e) => update(field.key, e.currentTarget.value)}
+        oninput={(e) => update(field.key, e.currentTarget.value, true)}
         placeholder={field.placeholder?.() ?? ''}
         {disabled}
       />
@@ -111,7 +119,7 @@
       <Label>{field.label()}</Label>
       <Textarea
         value={typeof values[field.key] === 'string' ? (values[field.key] as string) : ''}
-        oninput={(e) => update(field.key, e.currentTarget.value)}
+        oninput={(e) => update(field.key, e.currentTarget.value, true)}
         placeholder={field.placeholder?.() ?? ''}
         class="field-sizing-fixed {minHeightClass(field)} resize-none {field.grow ? 'flex-1' : ''}"
         {disabled}
@@ -150,7 +158,7 @@
         value={values[field.key] != null ? String(values[field.key]) : ''}
         oninput={(e) => {
           const v = e.currentTarget.value;
-          update(field.key, v === '' ? '' : v);
+          update(field.key, v === '' ? '' : v, true);
         }}
         min={field.min}
         max={field.max}
@@ -219,13 +227,15 @@
         </Select>
         <Input
           value={typeof values[field.key] === 'string' ? (values[field.key] as string) : ''}
-          oninput={(e) => update(field.key, e.currentTarget.value)}
+          oninput={(e) => update(field.key, e.currentTarget.value, true)}
           placeholder={field.placeholder?.() ?? ''}
           class="rounded-l-none"
           {disabled}
         />
       </div>
     </div>
+  {:else if field.type === 'file-list'}
+    <FileList {templateId} label={field.label()} onchange={onfileschange} {disabled} />
   {:else if field.type === 'custom'}
     <div class={span}>
       <field.component bind:value={values[field.key]} {disabled} />

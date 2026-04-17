@@ -7,7 +7,7 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Spinner } from '$lib/components/ui/spinner';
   import { Separator } from '$lib/components/ui/separator';
-  import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+  import * as Tabs from '$lib/components/ui/tabs';
   import { pick, triggerDownload } from '$lib/utils';
   import { onMount } from 'svelte';
   import typst, { loadingState, waitForTypst } from '$lib/typst.svelte';
@@ -108,7 +108,7 @@
     }
   };
 
-  let timeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  let debounceTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   let pdfBlob: Blob | undefined = $state(undefined);
   let pdf: string | undefined = $state(undefined);
   let compileError: string | undefined = $state(undefined);
@@ -164,12 +164,23 @@
     triggerDownload(pdf, getFileName());
   };
 
+  /** Schedule a PDF regeneration. Instant for non-text changes, debounced for text. */
+  function scheduleGenerate(debounce: boolean) {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    if (debounce) {
+      debounceTimeout = setTimeout(generatePDF, 500);
+    } else {
+      generatePDF();
+    }
+  }
+
+  // Track template switches – regenerate immediately
+  let prevTemplateId: string | undefined;
   $effect(() => {
-    // Debounce input changes to avoid excessive PDF regeneration
-    void templateId;
-    void JSON.stringify(valuesMap[templateId]);
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(generatePDF, 500);
+    if (prevTemplateId !== undefined && templateId !== prevTemplateId) {
+      scheduleGenerate(false);
+    }
+    prevTemplateId = templateId;
   });
 
   onMount(async () => {
@@ -219,29 +230,30 @@
       <CardHeader>
         <div class="flex items-center justify-between">
           <CardTitle class="text-base font-semibold">{m.app_name()}</CardTitle>
-          <Select
-            type="single"
+          <Tabs.Root
             value={templateId}
             onValueChange={(v) => {
               if (v) templateId = v;
             }}
           >
-            <SelectTrigger class="w-auto" size="sm">
-              {template.name()}
-            </SelectTrigger>
-            <SelectContent>
+            <Tabs.List variant="line">
               {#each TEMPLATES as tpl (tpl.id)}
-                <SelectItem value={tpl.id} label={tpl.name()} />
+                <Tabs.Trigger value={tpl.id}>{tpl.name()}</Tabs.Trigger>
               {/each}
-            </SelectContent>
-          </Select>
+            </Tabs.List>
+          </Tabs.Root>
         </div>
       </CardHeader>
       <CardContent class="flex flex-1 flex-col">
         <DynamicForm
           {template}
+          {templateId}
           values={getValues()}
-          onchange={(v) => setValues(v)}
+          onchange={(v, opts) => {
+            setValues(v);
+            scheduleGenerate(opts?.debounce ?? false);
+          }}
+          onfileschange={() => scheduleGenerate(false)}
           disabled={!isReady}
         />
       </CardContent>

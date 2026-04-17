@@ -9,6 +9,8 @@
   "doc_content_placeholder": "在此输入文件内容...",
   "doc_title": "文件标题",
   "download": "下载",
+  "file_add": "添加文件",
+  "file_list": "文件",
   "generating": "生成中",
   "invalid_date": "日期无效",
   "issue_date": "签发日期（塔罗斯历）",
