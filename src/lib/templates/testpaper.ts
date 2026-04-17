@@ -11,6 +11,7 @@ export interface TestpaperValues {
   year: string;
   title: string;
   subject: string;
+  paperSize: string;
   examType: string;
   examDuration: string;
   examInfo: KvEntry[];
@@ -32,7 +33,7 @@ export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
   gridCols: 4,
-  storageVersion: 1,
+  storageVersion: 2,
   fields: [
     {
       type: 'select',
@@ -51,6 +52,16 @@ export const testpaperTemplate: TemplateDefinition = {
       label: () => m.testpaper_year(),
       min: 1,
       placeholder: '152',
+      colspan: 1
+    },
+    {
+      type: 'select',
+      key: 'paperSize',
+      label: () => m.testpaper_paper_size(),
+      options: [
+        { value: 'a3', label: () => 'A3' },
+        { value: 'a4', label: () => 'A4' }
+      ],
       colspan: 1
     },
     {
@@ -133,6 +144,7 @@ export const testpaperTemplate: TemplateDefinition = {
     year: '152',
     title: '塔卫二全文明环带普通高等学校招生统一考试',
     subject: '数学',
+    paperSize: 'a3',
     examType: 'A',
     examDuration: '120分钟',
     examInfo: [{ key: '命题组', value: '终末地工业' }] satisfies KvEntry[],
@@ -305,18 +317,21 @@ export const testpaperTemplate: TemplateDefinition = {
 
     const watermarkExt = issuerExt(v.issuer);
     const watermarkScale = getLogoScales()[v.issuer] ?? 1;
+    const isA4 = v.paperSize === 'a4';
+    const watermarkWidth = isA4 ? '40%' : '20%';
+    const paperVar = isA4 ? 'a4' : 'a3';
 
     const lines: string[] = [
       '#import "@this/ezexam:0.3.2": *',
       '',
       '#show: setup.with(',
       '  mode: EXAM,',
-      '  paper: a3,',
+      `  paper: ${paperVar},`,
       `  show-answer: ${v.showAnswer ? 'true' : 'false'},`,
       `  par-justify: ${v.parJustify ? 'true' : 'false'},`,
       ')',
       '',
-      `#set page(background: place(center + horizon, block(width: 20%, image("watermark-${v.issuer}.${watermarkExt}", width: ${watermarkScale} * 100%))))`,
+      `#set page(background: place(center + horizon, block(width: ${watermarkWidth}, image("watermark-${v.issuer}.${watermarkExt}", width: ${watermarkScale} * 100%))))`,
       '',
       `#chapter[${escapeTypst(fullTitle)}]`,
       `#title[${escapeTypst(fullTitle)}]`,

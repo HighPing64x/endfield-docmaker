@@ -13,6 +13,7 @@
   import typst, { loadingState, waitForTypst } from '$lib/typst.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import DynamicForm from '$lib/components/DynamicForm.svelte';
+  import CompileError from '$lib/components/CompileError.svelte';
   import { TEMPLATES, getTemplate } from '$lib/templates';
 
   let isReady = $state(false);
@@ -292,12 +293,7 @@
       </CardHeader>
       <CardContent class="min-h-150 flex-1 p-0 pb-0">
         {#if compileError}
-          <div class="flex flex-col gap-2 p-6">
-            <p class="text-destructive text-sm font-medium">{m.compile_error()}</p>
-            <p class="text-muted-foreground text-xs">{m.compile_error_desc()}</p>
-            <pre
-              class="bg-muted text-destructive/80 p-3 font-mono text-xs text-wrap">{compileError}</pre>
-          </div>
+          <CompileError error={compileError} />
         {:else if pdf}
           <object
             data={pdf}
