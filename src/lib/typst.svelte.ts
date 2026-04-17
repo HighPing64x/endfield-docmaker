@@ -60,10 +60,6 @@ const isTarData = (data: Uint8Array): boolean =>
   data[260] === 0x61 && // a
   data[261] === 0x72; // r
 
-// let isFontsLoaded = false;
-// let fontsLoadPromise: Promise<{ fileName: string; url: string }[]> | null = null;
-// let cachedFonts: { fileName: string; url: string }[] = [];
-
 class InjectedRegistry extends FetchPackageRegistry {
   constructor(private am_: WritableAccessModel) {
     super(am_);
@@ -143,31 +139,6 @@ class InjectedRegistry extends FetchPackageRegistry {
     return cacheClosure();
   }
 }
-
-// export const preloadFonts = async (): Promise<{ fileName: string; url: string }[]> => {
-//   if (fontsLoadPromise) {
-//     return fontsLoadPromise;
-//   }
-
-//   if (isFontsLoaded) {
-//     return cachedFonts;
-//   }
-
-//   fontsLoadPromise = (async () => {
-//     try {
-//       const loaded = await loadFontsWithCache(fonts);
-//       cachedFonts = loaded;
-//       isFontsLoaded = true;
-//       return loaded;
-//     } catch (e) {
-//       console.error('Error preloading fonts:', e);
-//       fontsLoadPromise = null;
-//       throw e;
-//     }
-//   })();
-
-//   return fontsLoadPromise;
-// };
 
 const fetchGzip = async (url: string): Promise<Response> => {
   const res = await fetch(url);
