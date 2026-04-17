@@ -1,8 +1,8 @@
 <div align="center">
 
-# 终末地公文生成器
+# 终末地文档生成器
 
-**用于生成《明日方舟：终末地》游戏世界观中各机构签发的红头公文的工具**
+**用于生成《明日方舟：终末地》游戏世界观中各机构签发的文档的工具**
 
 [![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev)
 [![Typst](https://img.shields.io/badge/Typst-WebAssembly-239DAD?logo=typst&logoColor=white)](https://typst.app)
@@ -19,7 +19,7 @@
 
 ## 功能特性
 
-- 在浏览器中实时生成红头公文风格的 PDF 文件，无需后端服务
+- 在浏览器中实时生成 PDF 文件，无需后端服务
 - 支持自定义签发机构、文件标题、发文字号、签发日期等参数
 - 自动生成带有随机偏移和旋转的圆形公章
 - 基于 Typst 排版引擎，内容区域支持 Typst 标记语法
@@ -106,9 +106,10 @@ pnpm build
 
 ## 致谢
 
-- [ParaN3xus](https://github.com/ParaN3xus) — 红头公文 Typst 模板 (`official-doc.typ`)
-- [Lonyou](https://github.com/Vkango) — 圆形公章 Typst 模板 (`tuzhang.typ`)
+- [ParaN3xus](https://github.com/ParaN3xus) — 红头公文模板 (`official-doc.typ`)
+- [Lonyou](https://github.com/Vkango) — 圆形公章模板 (`tuzhang.typ`)
 - [Cuilb](https://www.xiaohongshu.com/user/profile/5ed7a1e1000000000101cef8) — 罗德岛、宏科院、联盟工团、环塔商会矢量复刻 Logo
+- [ezexam](https://github.com/gbchu/ezexam) — 试卷模板
 - [typst.ts](https://github.com/Myriad-Dreamin/typst.ts) — [Typst](https://typst.app) WebAssembly 编译器
 - [shadcn-svelte](https://www.shadcn-svelte.com) — UI 组件库
 
