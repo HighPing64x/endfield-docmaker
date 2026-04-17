@@ -9,6 +9,7 @@
   import CheckIcon from '@lucide/svelte/icons/check';
   import FileIcon from '@lucide/svelte/icons/file';
   import { getFiles, putFile, renameFile, removeFile, type StoredFile } from '$lib/stores/files';
+  import { getAssetData } from '$lib/utils';
   import typst, { waitForTypst } from '$lib/typst.svelte';
   import { onMount } from 'svelte';
 
@@ -16,23 +17,49 @@
     templateId,
     disabled = false,
     label = '',
+    defaultFiles = [],
     onchange
   }: {
     templateId: string;
     disabled?: boolean;
     label?: string;
+    defaultFiles?: { name: string; url: string }[];
     onchange?: () => void;
   } = $props();
 
   let files = $state<StoredFile[]>([]);
   let editingIndex = $state<number | null>(null);
   let editingName = $state('');
+  /** Track which templates have already had defaults seeded in this session. */
+  const seededTemplates: string[] = [];
 
   /** Reload files from IndexedDB and sync with Typst VFS. */
   async function reload() {
     files = await getFiles(templateId);
     await syncVFS();
     onchange?.();
+  }
+
+  /** Seed default files if the template has none stored yet. */
+  async function seedDefaults() {
+    if (seededTemplates.includes(templateId)) return;
+    seededTemplates.push(templateId);
+    if (defaultFiles.length === 0) return;
+    const existing = await getFiles(templateId);
+    if (existing.length > 0) return;
+    for (const df of defaultFiles) {
+      const data = await getAssetData(df.url);
+      const ext = df.name.split('.').pop()?.toLowerCase() ?? '';
+      const mimeType =
+        ext === 'png'
+          ? 'image/png'
+          : ext === 'jpg' || ext === 'jpeg'
+            ? 'image/jpeg'
+            : ext === 'svg'
+              ? 'image/svg+xml'
+              : 'application/octet-stream';
+      await putFile(templateId, df.name, data, mimeType);
+    }
   }
 
   /** Sync all files into Typst's virtual filesystem. */
@@ -53,15 +80,19 @@
     }
   }
 
-  onMount(() => {
-    reload();
+  onMount(async () => {
+    await seedDefaults();
+    await reload();
   });
 
   // Re-load when template changes
   let prevTemplateId: string | undefined;
   $effect(() => {
     if (prevTemplateId !== undefined && templateId !== prevTemplateId) {
-      reload();
+      (async () => {
+        await seedDefaults();
+        await reload();
+      })();
     }
     prevTemplateId = templateId;
   });

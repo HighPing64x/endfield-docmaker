@@ -63,6 +63,9 @@ export interface KvGridField extends BaseField {
 
 export interface FileListField extends BaseField {
   type: 'file-list';
+  /** Built-in asset files to preload when the template is first used.
+   * Each entry has a name (used in the VFS) and a URL import. */
+  defaultFiles?: { name: string; url: string }[];
 }
 
 export interface PrefixedInputField extends BaseField {

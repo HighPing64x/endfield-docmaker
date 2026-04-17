@@ -181,7 +181,7 @@
       <Label>{field.label()}</Label>
       <DateInput
         value={values[field.key] ?? { year: '', month: '', day: '' }}
-        onchange={(v) => update(field.key, v)}
+        onchange={(v) => update(field.key, v, true)}
         class="w-full"
         {disabled}
       />
@@ -235,7 +235,13 @@
       </div>
     </div>
   {:else if field.type === 'file-list'}
-    <FileList {templateId} label={field.label()} onchange={onfileschange} {disabled} />
+    <FileList
+      {templateId}
+      label={field.label()}
+      defaultFiles={field.defaultFiles ?? []}
+      onchange={onfileschange}
+      {disabled}
+    />
   {:else if field.type === 'custom'}
     <div class={span}>
       <field.component bind:value={values[field.key]} {disabled} />

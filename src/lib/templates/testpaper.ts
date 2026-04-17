@@ -3,6 +3,8 @@ import type { IssuerKey } from '$lib/types';
 import { ISSUERS, getLogoScales, issuerExt } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
 import type { KvEntry } from '$lib/components/KvGrid.svelte';
+import img6 from '$lib/assets/misc/6.png?url';
+import img17 from '$lib/assets/misc/17.png?url';
 
 export interface TestpaperValues {
   issuer: IssuerKey;
@@ -111,7 +113,11 @@ export const testpaperTemplate: TemplateDefinition = {
     {
       type: 'file-list',
       key: 'files',
-      label: () => m.file_list()
+      label: () => m.file_list(),
+      defaultFiles: [
+        { name: '6.png', url: img6 },
+        { name: '17.png', url: img17 }
+      ]
     },
     {
       type: 'textarea',

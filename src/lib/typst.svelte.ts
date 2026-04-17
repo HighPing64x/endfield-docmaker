@@ -20,14 +20,15 @@ import type {
   PackageResolveContext,
   PackageSpec
 } from '@myriaddreamin/typst.ts/dist/esm/internal.types.mjs';
-import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
 import { base } from '$app/paths';
 import { ISSUERS, setLogoScales } from './constants';
 import { gzipSync } from 'fflate';
+import { migrateOldDB } from '$lib/stores/db';
+import { loadFontsWithCache } from '$lib/stores/fonts';
 
-const fonts: { name: string; url: string }[] = [
+export const DEFAULT_FONTS: { name: string; url: string }[] = [
   { name: 'FZXIAOBIAOSONG-B05.TTF', url: fontXiaoBiaoSong },
   { name: 'SIMFANG.TTF', url: fontSimFang },
   { name: 'SIMHEI.TTF', url: fontSimHei },
@@ -194,9 +195,24 @@ export const initializeTypst = async () => {
 
   initializationPromise = (async () => {
     try {
-      // Prepare fonts
+      // Migrate from old DB if needed
+      await migrateOldDB();
+
+      // Prepare fonts (with IndexedDB caching)
       loadingState.status = 'loading_fonts';
-      const blobUrls = await Promise.all(fonts.map((f) => getFontBlobUrl(f.url)));
+      const fontsVersion: string = __FONTS_VERSION__;
+      const defaultBlobUrls = await loadFontsWithCache(DEFAULT_FONTS, fontsVersion);
+
+      // Also load any custom fonts from IndexedDB
+      const { getAllFonts } = await import('$lib/stores/fonts');
+      const allCached = await getAllFonts();
+      const customFonts = allCached.filter((f) => f.custom);
+      const customBlobUrls = customFonts.map((f) => {
+        const blob = new Blob([f.data], { type: 'font/woff2' });
+        return URL.createObjectURL(blob);
+      });
+
+      const blobUrls = [...defaultBlobUrls, ...customBlobUrls];
 
       // Configure WASM modules before any calls that trigger lazy init
       loadingState.status = 'loading_wasm';

@@ -4,9 +4,7 @@
  * Files are keyed per template and synchronised with Typst's VFS via mapShadow.
  */
 
-const DB_NAME = 'endfield-docmaker-files';
-const DB_VERSION = 1;
-const STORE_NAME = 'files';
+import { openDB, FILES_STORE } from './db';
 
 export interface StoredFile {
   /** Unique key: `${templateId}/${fileName}` */
@@ -17,21 +15,6 @@ export interface StoredFile {
   mimeType: string;
 }
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        store.createIndex('templateId', 'templateId', { unique: false });
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
 function fileId(templateId: string, name: string): string {
   return `${templateId}/${name}`;
 }
@@ -40,8 +23,8 @@ function fileId(templateId: string, name: string): string {
 export async function getFiles(templateId: string): Promise<StoredFile[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(FILES_STORE, 'readonly');
+    const store = tx.objectStore(FILES_STORE);
     const idx = store.index('templateId');
     const req = idx.getAll(templateId);
     req.onsuccess = () => resolve(req.result as StoredFile[]);
@@ -59,8 +42,8 @@ export async function putFile(
   const db = await openDB();
   const file: StoredFile = { id: fileId(templateId, name), templateId, name, data, mimeType };
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const req = tx.objectStore(STORE_NAME).put(file);
+    const tx = db.transaction(FILES_STORE, 'readwrite');
+    const req = tx.objectStore(FILES_STORE).put(file);
     req.onsuccess = () => resolve(file);
     req.onerror = () => reject(req.error);
   });
@@ -74,8 +57,8 @@ export async function renameFile(
 ): Promise<StoredFile | null> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(FILES_STORE, 'readwrite');
+    const store = tx.objectStore(FILES_STORE);
     const getReq = store.get(fileId(templateId, oldName));
     getReq.onsuccess = () => {
       const existing = getReq.result as StoredFile | undefined;
@@ -104,8 +87,8 @@ export async function renameFile(
 export async function removeFile(templateId: string, name: string): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const req = tx.objectStore(STORE_NAME).delete(fileId(templateId, name));
+    const tx = db.transaction(FILES_STORE, 'readwrite');
+    const req = tx.objectStore(FILES_STORE).delete(fileId(templateId, name));
     req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
   });
