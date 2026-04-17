@@ -13,6 +13,7 @@
   import GithubIcon from 'phosphor-svelte/lib/GithubLogoIcon';
   import BugIcon from 'phosphor-svelte/lib/BugIcon';
   import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
+  import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
   import { DEFAULT_FONTS } from '$lib/typst.svelte';
   import {
     getAllFonts,
@@ -38,6 +39,7 @@
   let allFonts = $state<CachedFont[]>([]);
   let isRefreshing = $state(false);
   let isClearing = $state(false);
+  let dataCleared = $state(false);
 
   async function loadFonts() {
     allFonts = await getAllFonts();
@@ -110,11 +112,17 @@
     try {
       await clearAllStores();
       localStorage.clear();
-      window.location.reload();
+      dataCleared = true;
     } catch (e) {
       console.error('Error clearing data:', e);
+    } finally {
       isClearing = false;
     }
+  }
+
+  /** Close the browser tab/window. */
+  function closePage() {
+    window.close();
   }
 
   function formatSize(bytes: number): string {
@@ -126,156 +134,170 @@
 
 <Dialog.Root bind:open>
   <Dialog.Content class="sm:max-w-xl">
-    <Dialog.Header>
-      <Dialog.Title>{m.settings()}</Dialog.Title>
-    </Dialog.Header>
+    {#if dataCleared}
+      <!-- Success view after clearing all data -->
+      <div class="flex flex-col items-center gap-4 py-6">
+        <CheckCircleIcon class="text-primary size-12" />
+        <p class="text-sm">{m.settings_data_cleared()}</p>
+        <Button variant="outline" size="sm" class="cursor-pointer text-xs" onclick={closePage}>
+          {m.settings_close_page()}
+        </Button>
+      </div>
+    {:else}
+      <Dialog.Header>
+        <Dialog.Title>{m.settings()}</Dialog.Title>
+      </Dialog.Header>
 
-    <Tabs.Root bind:value={activeTab}>
-      <Tabs.List variant="line">
-        <Tabs.Trigger value="fonts">{m.settings_fonts()}</Tabs.Trigger>
-        <Tabs.Trigger value="about">{m.settings_about()}</Tabs.Trigger>
-      </Tabs.List>
-    </Tabs.Root>
+      <Tabs.Root bind:value={activeTab}>
+        <Tabs.List variant="line">
+          <Tabs.Trigger value="fonts">{m.settings_fonts()}</Tabs.Trigger>
+          <Tabs.Trigger value="about">{m.settings_about()}</Tabs.Trigger>
+        </Tabs.List>
+      </Tabs.Root>
 
-    {#if activeTab === 'fonts'}
-      <div class="flex max-h-[min(32rem,50vh)] flex-col gap-3 overflow-y-auto">
-        <!-- Global actions -->
-        <div class="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="xs"
-            class="cursor-pointer text-xs"
-            onclick={refreshDefaultFonts}
-            disabled={isRefreshing}
-          >
-            {#if isRefreshing}
-              <Spinner class="size-3" />
-            {:else}
-              <ArrowClockwiseIcon class="size-3" />
-            {/if}
-            {m.settings_refresh_all()}
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            class="cursor-pointer text-xs"
-            onclick={handleAddCustomFont}
-          >
-            <PlusIcon class="size-3" />
-            {m.settings_add_font()}
-          </Button>
-        </div>
-
-        <Separator />
-
-        <!-- Font list -->
-        <div class="space-y-1">
-          {#each allFonts as font (font.name)}
-            <div
-              class="bg-muted/40 hover:bg-muted/60 flex items-center gap-2 px-2 py-1.5 text-sm transition-colors"
+      {#if activeTab === 'fonts'}
+        <div class="flex max-h-[min(32rem,50vh)] flex-col gap-3 overflow-y-auto">
+          <!-- Global actions -->
+          <div class="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="xs"
+              class="cursor-pointer text-xs"
+              onclick={refreshDefaultFonts}
+              disabled={isRefreshing}
             >
-              <FileIcon class="text-muted-foreground size-4 shrink-0" />
-              <span class="min-w-0 flex-1 truncate text-xs">{font.name}</span>
-              <span class="text-muted-foreground shrink-0 text-[10px]">
-                {formatSize(font.data.byteLength)}
-              </span>
-              {#if font.custom}
-                <span
-                  class="bg-primary/10 text-primary shrink-0 rounded px-1 py-0.5 text-[9px] font-medium"
-                >
-                  {m.settings_custom()}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="text-muted-foreground hover:text-destructive h-6 w-6 shrink-0 cursor-pointer p-0"
-                  onclick={() => handleRemoveFont(font.name)}
-                >
-                  <XIcon class="size-3.5" />
-                </Button>
+              {#if isRefreshing}
+                <Spinner class="size-3" />
               {:else}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="text-muted-foreground h-6 w-6 shrink-0 cursor-pointer p-0"
-                  onclick={() => refreshSingleFont(font.name)}
-                  disabled={isRefreshing}
-                >
-                  <ArrowClockwiseIcon class="size-3.5" />
-                </Button>
+                <ArrowClockwiseIcon class="size-3" />
               {/if}
-            </div>
-          {:else}
-            <p class="text-muted-foreground py-4 text-center text-xs">{m.settings_no_fonts()}</p>
-          {/each}
-        </div>
-      </div>
-    {:else if activeTab === 'about'}
-      <div class="flex flex-col gap-4">
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <Label class="text-muted-foreground w-20 shrink-0 text-xs">{m.settings_name()}</Label>
-            <span class="text-xs">{m.app_name()}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Label class="text-muted-foreground w-20 shrink-0 text-xs">{m.settings_version()}</Label
-            >
-            <span class="font-mono text-xs">v{version}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Label class="text-muted-foreground w-20 shrink-0 text-xs">{m.settings_commit()}</Label>
-            <a
-              href="https://github.com/Naptie/endfield-docmaker/commit/{commitHash}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="hover:text-foreground font-mono text-xs underline"
-            >
-              {commitHash}
-            </a>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              class="cursor-pointer text-xs"
-              href="https://github.com/Naptie/endfield-docmaker"
-              target="_blank"
-            >
-              <GithubIcon class="size-4" />
-              GitHub
+              {m.settings_refresh_all()}
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               class="cursor-pointer text-xs"
-              href="https://github.com/Naptie/endfield-docmaker/issues/new"
-              target="_blank"
+              onclick={handleAddCustomFont}
             >
-              <BugIcon class="size-4" />
-              {m.settings_report_bug()}
+              <PlusIcon class="size-3" />
+              {m.settings_add_font()}
             </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            class="text-destructive hover:bg-destructive hover:text-destructive-foreground w-fit cursor-pointer text-xs"
-            onclick={clearAllData}
-            disabled={isClearing}
-          >
-            {#if isClearing}
-              <Spinner class="size-4" />
+
+          <Separator />
+
+          <!-- Font list -->
+          <div class="space-y-1">
+            {#each allFonts as font (font.name)}
+              <div
+                class="bg-muted/40 hover:bg-muted/60 flex items-center gap-2 px-2 py-1.5 text-sm transition-colors"
+              >
+                <FileIcon class="text-muted-foreground size-4 shrink-0" />
+                <span class="min-w-0 flex-1 truncate text-xs">{font.name}</span>
+                <span class="text-muted-foreground shrink-0 text-[10px]">
+                  {formatSize(font.data.byteLength)}
+                </span>
+                {#if font.custom}
+                  <span
+                    class="bg-primary/10 text-primary shrink-0 rounded px-1 py-0.5 text-[9px] font-medium"
+                  >
+                    {m.settings_custom()}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="text-muted-foreground hover:text-destructive h-6 w-6 shrink-0 cursor-pointer p-0"
+                    onclick={() => handleRemoveFont(font.name)}
+                  >
+                    <XIcon class="size-3.5" />
+                  </Button>
+                {:else}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="text-muted-foreground h-6 w-6 shrink-0 cursor-pointer p-0"
+                    onclick={() => refreshSingleFont(font.name)}
+                    disabled={isRefreshing}
+                  >
+                    <ArrowClockwiseIcon class="size-3.5" />
+                  </Button>
+                {/if}
+              </div>
             {:else}
-              <TrashIcon class="size-4" />
-            {/if}
-            {m.settings_clear_data()}
-          </Button>
+              <p class="text-muted-foreground py-4 text-center text-xs">{m.settings_no_fonts()}</p>
+            {/each}
+          </div>
         </div>
-      </div>
+      {:else if activeTab === 'about'}
+        <div class="flex flex-col gap-4">
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <Label class="text-muted-foreground w-20 shrink-0 text-xs">{m.settings_name()}</Label>
+              <span class="text-xs">{m.app_name()}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <Label class="text-muted-foreground w-20 shrink-0 text-xs"
+                >{m.settings_version()}</Label
+              >
+              <span class="font-mono text-xs">v{version}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <Label class="text-muted-foreground w-20 shrink-0 text-xs"
+                >{m.settings_commit()}</Label
+              >
+              <a
+                href="https://github.com/Naptie/endfield-docmaker/commit/{commitHash}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-foreground font-mono text-xs underline"
+              >
+                {commitHash}
+              </a>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                class="cursor-pointer text-xs"
+                href="https://github.com/Naptie/endfield-docmaker"
+                target="_blank"
+              >
+                <GithubIcon class="size-4" />
+                GitHub
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                class="cursor-pointer text-xs"
+                href="https://github.com/Naptie/endfield-docmaker/issues/new"
+                target="_blank"
+              >
+                <BugIcon class="size-4" />
+                {m.settings_report_bug()}
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              class="text-destructive hover:bg-destructive hover:text-destructive-foreground w-fit cursor-pointer text-xs"
+              onclick={clearAllData}
+              disabled={isClearing}
+            >
+              {#if isClearing}
+                <Spinner class="size-4" />
+              {:else}
+                <TrashIcon class="size-4" />
+              {/if}
+              {m.settings_clear_data()}
+            </Button>
+          </div>
+        </div>
+      {/if}
     {/if}
   </Dialog.Content>
 </Dialog.Root>
