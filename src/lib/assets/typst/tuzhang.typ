@@ -21,7 +21,7 @@
   main_max_arc: 240deg, // 主文字最大弧度
   sub_max_arc: 120deg, // 副文字最大弧度
 ) = context {
-  set text(font: "STSong")
+  set text(font: "Noto Serif CJK SC")
 
   let circular_text(text_content, radius, start_angle: -90deg, is_top: true, text_size: 10pt, max_arc: 240deg) = {
     let chars = text_content.clusters()
@@ -101,7 +101,7 @@
 
       for char_elem in circular_text(
         main_text,
-        outer_radius - main_text_size,
+        outer_radius - main_text_size * 1.05,
         start_angle: -90deg,
         is_top: true,
         text_size: main_text_size,

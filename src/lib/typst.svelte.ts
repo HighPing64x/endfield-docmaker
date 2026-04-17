@@ -4,9 +4,12 @@ import fontXiaoBiaoSong from '$lib/assets/fonts/FZXIAOBIAOSONG-B05.TTF?url';
 import fontSimFang from '$lib/assets/fonts/SIMFANG.TTF?url';
 import fontSimHei from '$lib/assets/fonts/SIMHEI.TTF?url';
 import fontSimKai from '$lib/assets/fonts/SIMKAI.TTF?url';
-import fontSTSong from '$lib/assets/fonts/STSONG.TTF?url';
+import fontTimesNewRoman from '$lib/assets/fonts/times.ttf?url';
+import fontNotoSans from '$lib/assets/fonts/NotoSansCJKsc-Regular.otf?url';
+import fontNotoSerif from '$lib/assets/fonts/NotoSerifCJKsc-Regular.otf?url';
+import fontSTIXTwoMath from '$lib/assets/fonts/STIXTwoMath-Regular.otf?url';
+import fontTeXGyreTermes from '$lib/assets/fonts/texgyretermes-math.otf?url';
 import fontJBMono from '$lib/assets/fonts/JetBrainsMono-VariableFont_wght.ttf?url';
-import fontNewCMMath from '$lib/assets/fonts/NewCMMath-Regular.otf?url';
 
 import rendererWasmUrl from '@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url';
 import compilerWasmUrl from '@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url';
@@ -17,21 +20,24 @@ import type {
   PackageResolveContext,
   PackageSpec
 } from '@myriaddreamin/typst.ts/dist/esm/internal.types.mjs';
-import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
-import type { IssuerKey, Authority } from './types';
-import { ISSUERS } from './constants';
-import { m } from '$lib/paraglide/messages';
+import { base } from '$app/paths';
+import { ISSUERS, setLogoScales } from './constants';
+import { gzipSync } from 'fflate';
+import { loadFontsWithCache } from '$lib/stores/fonts';
 
-const fonts: { name: string; url: string }[] = [
+export const DEFAULT_FONTS: { name: string; url: string }[] = [
   { name: 'FZXIAOBIAOSONG-B05.TTF', url: fontXiaoBiaoSong },
   { name: 'SIMFANG.TTF', url: fontSimFang },
   { name: 'SIMHEI.TTF', url: fontSimHei },
   { name: 'SIMKAI.TTF', url: fontSimKai },
-  { name: 'STSONG.TTF', url: fontSTSong },
-  { name: 'JetBrainsMono-VariableFont_wght.ttf', url: fontJBMono },
-  { name: 'NewCMMath-Regular.otf', url: fontNewCMMath }
+  { name: 'times.ttf', url: fontTimesNewRoman },
+  { name: 'NotoSansCJKsc-Regular.otf', url: fontNotoSans },
+  { name: 'NotoSerifCJKsc-Regular.otf', url: fontNotoSerif },
+  { name: 'STIXTwoMath-Regular.otf', url: fontSTIXTwoMath },
+  { name: 'texgyretermes-math.otf', url: fontTeXGyreTermes },
+  { name: 'JetBrainsMono-VariableFont_wght.ttf', url: fontJBMono }
 ];
 
 let isInitialized = false;
@@ -40,27 +46,53 @@ export const loadingState: { status: 'loading_fonts' | 'loading_wasm' | 'loading
   $state({ status: '' });
 
 const logoScales: Record<string, number> = {};
+// Expose logo scales to template definitions
+const syncLogoScales = () => setLogoScales({ ...logoScales });
 
-// let isFontsLoaded = false;
-// let fontsLoadPromise: Promise<{ fileName: string; url: string }[]> | null = null;
-// let cachedFonts: { fileName: string; url: string }[] = [];
+const isGzipData = (data: Uint8Array): boolean =>
+  data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b;
+const isTarData = (data: Uint8Array): boolean =>
+  data.length >= 262 &&
+  data[257] === 0x75 && // u
+  data[258] === 0x73 && // s
+  data[259] === 0x74 && // t
+  data[260] === 0x61 && // a
+  data[261] === 0x72; // r
 
 class InjectedRegistry extends FetchPackageRegistry {
   constructor(private am_: WritableAccessModel) {
     super(am_);
   }
 
+  pullPackageData(path: PackageSpec): Uint8Array | undefined {
+    const request = new XMLHttpRequest();
+    request.overrideMimeType('text/plain; charset=x-user-defined');
+    request.open('GET', this.resolvePath(path), false);
+    request.send(null);
+
+    if (
+      request.status === 200 &&
+      (request.response instanceof String || typeof request.response === 'string')
+    ) {
+      return Uint8Array.from(request.response, (char) => char.charCodeAt(0));
+    }
+
+    return undefined;
+  }
+
   resolvePath(path: PackageSpec): string {
     switch (path.namespace) {
       case 'preview':
         return `https://packages.typst.org/preview/${path.name}-${path.version}.tar.gz`;
+      case 'this':
+        return `${base}/typst/${path.name}-${path.version}.tar.gz`;
       default:
         return super.resolvePath(path);
     }
   }
 
   resolve(spec: PackageSpec, context: PackageResolveContext): string | undefined {
-    if (spec.namespace !== 'preview') {
+    if (spec.namespace !== 'preview' && spec.namespace !== 'this') {
       return undefined;
     }
 
@@ -75,11 +107,20 @@ class InjectedRegistry extends FetchPackageRegistry {
     if (!data) {
       return undefined;
     }
+    const normalizedData = !isGzipData(data) && isTarData(data) ? gzipSync(data) : data;
+    if (!isGzipData(normalizedData)) {
+      const firstBytes = Array.from(data.subarray(0, 8))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join(' ');
+      throw new Error(
+        `Package ${spec.namespace}/${spec.name}:${spec.version} is not gzip data (first bytes: ${firstBytes})`
+      );
+    }
 
     // Extract package bundle to the underlying access model `this.am`
     const previewDir = `/@memory/fetch/packages/${spec.namespace}/${spec.name}/${spec.version}`;
     const entries: [string, Uint8Array, Date][] = [];
-    context.untar(data, (path: string, data: Uint8Array, mtime: number) => {
+    context.untar(normalizedData, (path: string, data: Uint8Array, mtime: number) => {
       entries.push([previewDir + '/' + path, data, new Date(mtime)]);
     });
     const cacheClosure = () => {
@@ -97,31 +138,6 @@ class InjectedRegistry extends FetchPackageRegistry {
     return cacheClosure();
   }
 }
-
-// export const preloadFonts = async (): Promise<{ fileName: string; url: string }[]> => {
-//   if (fontsLoadPromise) {
-//     return fontsLoadPromise;
-//   }
-
-//   if (isFontsLoaded) {
-//     return cachedFonts;
-//   }
-
-//   fontsLoadPromise = (async () => {
-//     try {
-//       const loaded = await loadFontsWithCache(fonts);
-//       cachedFonts = loaded;
-//       isFontsLoaded = true;
-//       return loaded;
-//     } catch (e) {
-//       console.error('Error preloading fonts:', e);
-//       fontsLoadPromise = null;
-//       throw e;
-//     }
-//   })();
-
-//   return fontsLoadPromise;
-// };
 
 const fetchGzip = async (url: string): Promise<Response> => {
   const res = await fetch(url);
@@ -149,9 +165,21 @@ export const initializeTypst = async () => {
 
   initializationPromise = (async () => {
     try {
-      // Prepare fonts
+      // Prepare fonts (with IndexedDB caching)
       loadingState.status = 'loading_fonts';
-      const blobUrls = await Promise.all(fonts.map((f) => getFontBlobUrl(f.url)));
+      const fontsVersion: string = __FONTS_VERSION__;
+      const defaultBlobUrls = await loadFontsWithCache(DEFAULT_FONTS, fontsVersion);
+
+      // Also load any custom fonts from IndexedDB
+      const { getAllFonts } = await import('$lib/stores/fonts');
+      const allCached = await getAllFonts();
+      const customFonts = allCached.filter((f) => f.custom);
+      const customBlobUrls = customFonts.map((f) => {
+        const blob = new Blob([new Uint8Array(f.data)], { type: 'font/woff2' });
+        return URL.createObjectURL(blob);
+      });
+
+      const blobUrls = [...defaultBlobUrls, ...customBlobUrls];
 
       // Configure WASM modules before any calls that trigger lazy init
       loadingState.status = 'loading_wasm';
@@ -205,6 +233,7 @@ export const initializeTypst = async () => {
       );
 
       isInitialized = true;
+      syncLogoScales();
       loadingState.status = '';
       console.log(`Typst initialized`);
     } catch (e) {
@@ -229,50 +258,6 @@ export const waitForTypst = async () => {
   } else {
     await initializeTypst();
   }
-};
-
-export const getTypstDocument = ({
-  issuer,
-  authorities,
-  docTitle,
-  refNo,
-  issueDate: { year, month, day },
-  docContent
-}: {
-  issuer: IssuerKey;
-  authorities: Authority[];
-  docTitle: string;
-  refNo: string;
-  issueDate: { year: number; month: number; day: number };
-  docContent: string;
-}): string => {
-  const extOf = (key: string) =>
-    ISSUERS.find((i) => i.key === key)?.type === 'svg' ? 'svg' : 'png';
-  const authEntries = authorities
-    .filter((a) => a.name.trim() !== '')
-    .map(
-      (a) =>
-        `(name: "${m[`prefix_${a.faction}`]()}${a.name}", icon: image("stamp-${a.faction}.${extOf(a.faction)}", width: ${logoScales[a.faction] ?? 1} * 100%))`
-    );
-  const watermarkExt = extOf(issuer);
-  return `
-#import "official-doc.typ": *
-
-#show: official-doc.with(
-  ref-no: "${refNo}",
-  conf-level: none,
-  conf-period: none,
-  urgen-level: none,
-  authorities: (${authEntries.join(', ')},),
-  watermark-icon: image("watermark-${issuer}.${watermarkExt}", width: ${logoScales[issuer] ?? 1} * 100%),
-  issuer: "${m[`issuer_${issuer}`]()}",
-  title: "${docTitle}",
-  issue-date: datetime(year: ${year}, month: ${month}, day: ${day}),
-  seed: ${Date.now()},
-)
-
-${docContent}
-`;
 };
 
 export default typst;

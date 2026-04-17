@@ -2,11 +2,15 @@
   import { m } from '$lib/paraglide/messages';
   import { Button } from '$lib/components/ui/button';
   import GithubIcon from 'phosphor-svelte/lib/GithubLogoIcon';
+  import GearIcon from 'phosphor-svelte/lib/GearIcon';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   import LocaleSwitch from '$lib/components/LocaleSwitch.svelte';
+  import SettingsModal from '$lib/components/SettingsModal.svelte';
 
   const version = __APP_VERSION__;
   const commitHash = __COMMIT_HASH__;
+
+  let settingsOpen = $state(false);
 </script>
 
 <footer class="border-border/40 bg-muted/30 border-t">
@@ -32,6 +36,15 @@
       <Button
         variant="ghost"
         size="sm"
+        class="text-muted-foreground hover:text-foreground cursor-pointer"
+        onclick={() => (settingsOpen = true)}
+      >
+        <GearIcon class="mr-1.5 h-3.5 w-3.5" />
+        {m.settings()}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         href="https://github.com/Naptie/endfield-docmaker"
         target="_blank"
         rel="noopener noreferrer"
@@ -43,3 +56,5 @@
     </div>
   </div>
 </footer>
+
+<SettingsModal bind:open={settingsOpen} />
