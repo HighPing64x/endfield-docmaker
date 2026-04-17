@@ -29,7 +29,7 @@ const parseYear = (raw: string): number => {
 export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
-  gridCols: 3,
+  gridCols: 4,
   storageVersion: 1,
   fields: [
     {
@@ -53,19 +53,6 @@ export const testpaperTemplate: TemplateDefinition = {
     },
     {
       type: 'text',
-      key: 'subject',
-      label: () => m.testpaper_subject(),
-      placeholder: () => m.testpaper_subject_placeholder(),
-      colspan: 1
-    },
-    {
-      type: 'text',
-      key: 'title',
-      label: () => m.testpaper_title(),
-      placeholder: () => m.testpaper_title_placeholder()
-    },
-    {
-      type: 'text',
       key: 'examType',
       label: () => m.testpaper_exam_type(),
       placeholder: () => 'A',
@@ -76,7 +63,21 @@ export const testpaperTemplate: TemplateDefinition = {
       key: 'examDuration',
       label: () => m.testpaper_exam_duration(),
       placeholder: () => '120分钟',
-      colspan: 2
+      colspan: 1
+    },
+    {
+      type: 'text',
+      key: 'title',
+      label: () => m.testpaper_title(),
+      placeholder: () => m.testpaper_title_placeholder(),
+      colspan: 3
+    },
+    {
+      type: 'text',
+      key: 'subject',
+      label: () => m.testpaper_subject(),
+      placeholder: () => m.testpaper_subject_placeholder(),
+      colspan: 1
     },
     {
       type: 'kv-grid',
@@ -119,7 +120,7 @@ export const testpaperTemplate: TemplateDefinition = {
   defaults: () => ({
     issuer: ISSUERS[0].key as string,
     year: '152',
-    title: '全文明环带普通高等学校统一招生考试',
+    title: '全文明环带普通高等学校招生统一考试',
     subject: '数学',
     examType: 'A',
     examDuration: '120分钟',
@@ -133,10 +134,11 @@ export const testpaperTemplate: TemplateDefinition = {
   [答题前，请务必将自已的姓名、准考证号用0.5毫米黑色墨水的签字笔填写在试卷及答题卡的规定位置。],
   [请认真核对监考员在答题卡上所粘贴的条形码上的姓名、准考证号与本人是否相符。],
   [作答选择题必须用2B铅笔将答题卡上对应选项的方框涂满、涂黑；如需改动，请用橡皮擦干净后，再选涂其他答案。作答非选择题，必须用0.5毫米黑色墨水的签字笔在答题卡上的指定位置作答，在其他位置作答一律无效。],
-  [本试卷共4页，满分150分，考试时间为120分钟。考试结束后，请将本试卷和答题卡一并交回。],
+  [本试卷共4页，满分#total-pts 分，考试时间为#exam-duration。考试结束后，请将本试卷和答题卡一并交回。],
 )
 
-= 单选题：本题共 8 小题，每小题 5 分，共 40 分。在每小题给出的四个选项中，只有一项是符合题目要求的。
+#set-default-pts(5)
+= 单选题：本题共 #q-count 小题，每小题 #single-pts 分，共 #section-pts 分。在每小题给出的四个选项中，只有一项是符合题目要求的。
 #question[
   $(1 + 5"i")"i"$ 的虚部为 #paren[C]
   #choices(-1, 0, 1, 6)
@@ -188,7 +190,8 @@ export const testpaperTemplate: TemplateDefinition = {
   #choices([$x > y > z$], [$x > z > y$], [$y > x > z$], [$y > z > x$])
 ]
 
-= 多选题：本题共 3 小题，每小题 6 分，共 18 分。在每小题给出的选项中，有多项符合题目要求。全部选对的得 6 分，部分选对的得部分分，有选错的得 0 分。
+#set-default-pts(6)
+= 多选题：本题共 #q-count 小题，每小题 #single-pts 分，共 #section-pts 分。在每小题给出的选项中，有多项符合题目要求。全部选对的得 #single-pts 分，部分选对的得部分分，有选错的得 0 分。
 #question[
   在正三棱柱 $A B C-A_1B_1C_1$ 中，$D$ 为 $B C$ 中点，则 #paren[BD]
   #choices([$A D perp A_1C$], [$B_1C perp "平面" A A_1D$], [$C C_1 parallel "平面" A A_1D$], [$A D parallel A_1B_1$])
@@ -205,7 +208,8 @@ export const testpaperTemplate: TemplateDefinition = {
   #choices([$sin C = sin^2 A + sin^2 B$], [$A B = sqrt(2)$], [$sin A + sin B = sqrt(6) / 2$], [$A C^2 + B C^2 = 3$])
 ]
 
-= 填空题：本题共 3 小题，每小题 5 分，共 15 分。
+#set-default-pts(5)
+= 填空题：本题共 #q-count 小题，每小题 #single-pts 分，共 #section-pts 分。
 #question[
   若直线 $y = 2x +5$ 是曲线 $y = e^x + x + a$ 的切线，则 $a =$#fillin[4].
 ]
@@ -218,7 +222,8 @@ export const testpaperTemplate: TemplateDefinition = {
   一个箱子里有 5 个球，分别以 1$~$5 标号，若有放回取三次，记至少取出一次的球的个数 $X$，则 $E(X) =$#fillin[$61/25$].
 ]
 
-= 解答题：本题共 5 小题，共 77 分。解答应写出文字说明、证明过程或演算步骤。
+#set-default-pts(none)
+= 解答题：本题共 #q-count 小题，共 #section-pts 分。解答应写出文字说明、证明过程或演算步骤。
 #question(points: 13, bottom: 1in)[
   为研究某疾病与超声波检查结果的关系，从做过超声波检查的人群中随机调查了1000人，得到如下的列联表：
   #align(center)[
@@ -275,20 +280,6 @@ export const testpaperTemplate: TemplateDefinition = {
   + 给定 $theta in (0,pi)，a$ 为实数，证明：存在 $y in [a - theta, a + theta]$，使得 $cos y lt.slant cos theta$；
   + 若存在 $phi$，使得对任意 $x$，都有 $5cos x - cos(5x + phi) lt.slant b$，求 $b$ 的最小值.
 ]
-
-#solution-block[
-  #let answer = tag.with(prefix: "答案：", suffix: [ \\ ], color: maroon)
-  #solution(title: "解析")[
-    #answer[A]
-    解: #lorem(6)#score(6)
-  ]
-
-  #solution[
-    #answer[B]
-    解: #lorem(8)#score(8)
-  ]
-
-]
 `
   }),
   generateTypstSource: (values: Record<string, unknown>) => {
@@ -305,7 +296,7 @@ export const testpaperTemplate: TemplateDefinition = {
     const watermarkScale = getLogoScales()[v.issuer] ?? 1;
 
     const lines: string[] = [
-      '#import "@preview/ezexam:0.3.1": *',
+      '#import "@this/ezexam:0.3.2": *',
       '',
       '#show: setup.with(',
       '  mode: EXAM,',
@@ -338,7 +329,12 @@ export const testpaperTemplate: TemplateDefinition = {
     }
 
     if (v.examDuration.trim()) {
-      lines.push(`#exam-info(info: (考试时长: "${escapeTypst(v.examDuration)}"))`);
+      lines.push(
+        `#let exam-duration = "${escapeTypst(v.examDuration)}"`,
+        '#exam-info(info: (考试时间: [#exam-duration], 总分: [#total-pts 分]))'
+      );
+    } else {
+      lines.push(`#exam-info(info: (总分: [#total-pts 分]))`);
     }
 
     lines.push('', v.docContent);

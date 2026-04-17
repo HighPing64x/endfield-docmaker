@@ -47,8 +47,8 @@
   "template_official_doc": "公文",
   "template_testpaper": "试卷",
   "testpaper_content": "试卷内容",
-  "testpaper_content_placeholder": "在此输入试卷内容（包括 #notice、题目和 #solution-block）...",
-  "testpaper_exam_duration": "考试时长",
+  "testpaper_content_placeholder": "在此输入试卷内容...",
+  "testpaper_exam_duration": "考试时间",
   "testpaper_exam_info": "附加考试信息",
   "testpaper_exam_type": "试卷类型",
   "testpaper_par_justify": "段落两端对齐",
@@ -59,7 +59,7 @@
   "testpaper_subject_placeholder": "数学",
   "testpaper_title": "试卷标题",
   "testpaper_title_placeholder": "期末考试I卷",
-  "testpaper_year": "年份",
+  "testpaper_year": "年份（塔罗斯历）",
   "toggle_theme": "切换主题",
   "view_on_github": "在 GitHub 上查看"
 }

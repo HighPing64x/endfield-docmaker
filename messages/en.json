@@ -47,7 +47,7 @@
   "template_official_doc": "Official Document",
   "template_testpaper": "Test Paper",
   "testpaper_content": "Paper Content",
-  "testpaper_content_placeholder": "Enter paper content here (including #notice, questions, and #solution-block)...",
+  "testpaper_content_placeholder": "Enter paper content here...",
   "testpaper_exam_duration": "Exam Duration",
   "testpaper_exam_info": "Additional Exam Info",
   "testpaper_exam_type": "Paper Type",
@@ -59,7 +59,7 @@
   "testpaper_subject_placeholder": "Mathematics",
   "testpaper_title": "Paper Title",
   "testpaper_title_placeholder": "Final Exam Paper I",
-  "testpaper_year": "Year",
+  "testpaper_year": "Year (Talosian Calendar)",
   "toggle_theme": "Toggle theme",
   "view_on_github": "View on GitHub"
 }

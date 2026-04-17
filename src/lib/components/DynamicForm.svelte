@@ -73,7 +73,13 @@
   }
 
   const gridColsClass = $derived(
-    cols === 1 ? 'grid-cols-1' : cols === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+    cols === 1
+      ? 'grid-cols-1'
+      : cols === 2
+        ? 'sm:grid-cols-2'
+        : cols === 3
+          ? 'sm:grid-cols-3'
+          : 'sm:grid-cols-4'
   );
 </script>
 

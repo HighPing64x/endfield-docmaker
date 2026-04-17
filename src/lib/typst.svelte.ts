@@ -23,7 +23,9 @@ import type {
 import { getFontBlobUrl } from '$lib/utils';
 import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
+import { base } from '$app/paths';
 import { ISSUERS, setLogoScales } from './constants';
+import { gzipSync } from 'fflate';
 
 const fonts: { name: string; url: string }[] = [
   { name: 'FZXIAOBIAOSONG-B05.TTF', url: fontXiaoBiaoSong },
@@ -47,6 +49,16 @@ const logoScales: Record<string, number> = {};
 // Expose logo scales to template definitions
 const syncLogoScales = () => setLogoScales({ ...logoScales });
 
+const isGzipData = (data: Uint8Array): boolean =>
+  data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b;
+const isTarData = (data: Uint8Array): boolean =>
+  data.length >= 262 &&
+  data[257] === 0x75 && // u
+  data[258] === 0x73 && // s
+  data[259] === 0x74 && // t
+  data[260] === 0x61 && // a
+  data[261] === 0x72; // r
+
 // let isFontsLoaded = false;
 // let fontsLoadPromise: Promise<{ fileName: string; url: string }[]> | null = null;
 // let cachedFonts: { fileName: string; url: string }[] = [];
@@ -56,17 +68,35 @@ class InjectedRegistry extends FetchPackageRegistry {
     super(am_);
   }
 
+  pullPackageData(path: PackageSpec): Uint8Array | undefined {
+    const request = new XMLHttpRequest();
+    request.overrideMimeType('text/plain; charset=x-user-defined');
+    request.open('GET', this.resolvePath(path), false);
+    request.send(null);
+
+    if (
+      request.status === 200 &&
+      (request.response instanceof String || typeof request.response === 'string')
+    ) {
+      return Uint8Array.from(request.response, (char) => char.charCodeAt(0));
+    }
+
+    return undefined;
+  }
+
   resolvePath(path: PackageSpec): string {
     switch (path.namespace) {
       case 'preview':
         return `https://packages.typst.org/preview/${path.name}-${path.version}.tar.gz`;
+      case 'this':
+        return `${base}/typst/${path.name}-${path.version}.tar.gz`;
       default:
         return super.resolvePath(path);
     }
   }
 
   resolve(spec: PackageSpec, context: PackageResolveContext): string | undefined {
-    if (spec.namespace !== 'preview') {
+    if (spec.namespace !== 'preview' && spec.namespace !== 'this') {
       return undefined;
     }
 
@@ -81,11 +111,20 @@ class InjectedRegistry extends FetchPackageRegistry {
     if (!data) {
       return undefined;
     }
+    const normalizedData = !isGzipData(data) && isTarData(data) ? gzipSync(data) : data;
+    if (!isGzipData(normalizedData)) {
+      const firstBytes = Array.from(data.subarray(0, 8))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join(' ');
+      throw new Error(
+        `Package ${spec.namespace}/${spec.name}:${spec.version} is not gzip data (first bytes: ${firstBytes})`
+      );
+    }
 
     // Extract package bundle to the underlying access model `this.am`
     const previewDir = `/@memory/fetch/packages/${spec.namespace}/${spec.name}/${spec.version}`;
     const entries: [string, Uint8Array, Date][] = [];
-    context.untar(data, (path: string, data: Uint8Array, mtime: number) => {
+    context.untar(normalizedData, (path: string, data: Uint8Array, mtime: number) => {
       entries.push([previewDir + '/' + path, data, new Date(mtime)]);
     });
     const cacheClosure = () => {
