@@ -13,3 +13,20 @@ export const ISSUERS = [
   { key: 'tgcc', type: 'svg', raw: logoTGCC },
   { key: 'uwst', type: 'svg', raw: logoUWST }
 ] as const satisfies readonly IssuerEntry[];
+
+/**
+ * Shared logo scales set by `typst.svelte.ts` during initialization.
+ * Exposed as a module-level mutable reference so templates can read them.
+ */
+let sharedLogoScales: Record<string, number> = {};
+export function getLogoScales(): Record<string, number> {
+  return sharedLogoScales;
+}
+export function setLogoScales(scales: Record<string, number>) {
+  sharedLogoScales = scales;
+}
+
+/** Get the file extension for a given issuer key. */
+export function issuerExt(key: string): string {
+  return ISSUERS.find((i) => i.key === key)?.type === 'svg' ? 'svg' : 'png';
+}

@@ -197,6 +197,11 @@
 
   show: show-cn-fakebold
   show raw: set text(font: "JetBrains Mono")
+  show math.equation: set text(font: (
+    (name: "Times New Roman", covers: regex("\w")), // 正文中的数字，字母字体
+    (name: "STIX Two Math", covers: regex("[𝑗𝑓𝑧𝜋∅/±]")), // 𝑓𝑧𝜋∅/± 符号的数学字体
+    "TeX Gyre Termes Math", // 数学字体
+  ))
   content
 
   v(7em)

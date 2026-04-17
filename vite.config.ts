@@ -3,13 +3,25 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { compression, defineAlgorithm } from 'vite-plugin-compression2';
 import { constants } from 'zlib';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const commitHash = execSync('git rev-parse --short HEAD').toString().trim();
 const basePath = process.env.BASE_PATH ?? '';
+
+// Compute a hash of the fonts directory for cache invalidation.
+const fontsDir = join('src', 'lib', 'assets', 'fonts');
+const fontFiles = readdirSync(fontsDir).sort();
+const fontsHash = createHash('sha256');
+for (const file of fontFiles) {
+  fontsHash.update(file);
+  fontsHash.update(readFileSync(join(fontsDir, file)));
+}
+const fontsVersion = fontsHash.digest('hex').slice(0, 12);
 
 export default defineConfig({
   plugins: [
@@ -51,6 +63,7 @@ export default defineConfig({
   ],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __COMMIT_HASH__: JSON.stringify(commitHash)
+    __COMMIT_HASH__: JSON.stringify(commitHash),
+    __FONTS_VERSION__: JSON.stringify(fontsVersion)
   }
 });
