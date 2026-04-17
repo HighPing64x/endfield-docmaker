@@ -170,7 +170,9 @@
     const urls: Record<string, string> = {};
     for (const file of files) {
       if (isImageFile(file)) {
-        const blob = new Blob([file.data], { type: file.mimeType || 'application/octet-stream' });
+        const blob = new Blob([new Uint8Array(file.data)], {
+          type: file.mimeType || 'application/octet-stream'
+        });
         urls[file.id] = URL.createObjectURL(blob);
       }
     }
