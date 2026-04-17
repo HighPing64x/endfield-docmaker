@@ -13,7 +13,7 @@
   import { getFiles, putFile, renameFile, removeFile, type StoredFile } from '$lib/stores/files';
   import { getAssetData } from '$lib/utils';
   import typst, { waitForTypst } from '$lib/typst.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   let {
     templateId,
@@ -86,6 +86,12 @@
   onMount(async () => {
     await seedDefaults();
     await reload();
+  });
+
+  onDestroy(() => {
+    for (const url of Object.values(previewUrls)) {
+      URL.revokeObjectURL(url);
+    }
   });
 
   // Re-load when template changes

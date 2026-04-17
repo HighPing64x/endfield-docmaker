@@ -22,37 +22,22 @@
 
   function parseDiagnostics(raw: string): Diagnostic[] | null {
     try {
-      // Match the array pattern: [SourceDiagnostic { ... }, SourceDiagnostic { ... }]
       const trimmed = raw.trim();
       if (!trimmed.startsWith('[') || !trimmed.includes('SourceDiagnostic')) return null;
 
       const results: Diagnostic[] = [];
-      // Match each SourceDiagnostic block
-      const regex =
+      // Matches: SourceDiagnostic { severity: Error|Warning, span: Span(...), message: "...", trace: [...], hints: [...] }
+      const diagRegex =
         /SourceDiagnostic\s*\{\s*severity:\s*(Error|Warning)\s*,\s*span:\s*Span\([^)]*\)\s*,\s*message:\s*"((?:[^"\\]|\\.)*)"\s*,\s*trace:\s*\[((?:[^\]])*)\]\s*,\s*hints:\s*\[((?:[^\]])*)\]\s*\}/g;
       let match;
-      while ((match = regex.exec(trimmed)) !== null) {
+      while ((match = diagRegex.exec(trimmed)) !== null) {
         const severity = match[1] as 'Error' | 'Warning';
-        const message = match[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-        const traceRaw = match[3].trim();
-        const hintsRaw = match[4].trim();
-
-        const trace = traceRaw
-          ? traceRaw
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : [];
-        const hints = hintsRaw
-          ? hintsRaw
-              .split(',')
-              .map((h) => {
-                const m = h.trim().match(/^"((?:[^"\\]|\\.)*)"$/);
-                return m ? m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\') : h.trim();
-              })
-              .filter(Boolean)
-          : [];
-
+        const message = unescapeString(match[2]);
+        const trace = parseCommaSeparated(match[3]);
+        const hints = parseCommaSeparated(match[4]).map((h) => {
+          const quoted = h.match(/^"((?:[^"\\]|\\.)*)"$/);
+          return quoted ? unescapeString(quoted[1]) : h;
+        });
         results.push({ severity, message, trace, hints });
       }
 
@@ -60,6 +45,19 @@
     } catch {
       return null;
     }
+  }
+
+  function unescapeString(s: string): string {
+    return s.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  }
+
+  function parseCommaSeparated(raw: string): string[] {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    return trimmed
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   /** Deduplicate diagnostics by severity + message, keeping count. */
