@@ -98,7 +98,7 @@ export async function loadFontsWithCache(
       await putFont({ name: font.name, data, version });
     }
 
-    const blob = new Blob([data], { type: 'font/woff2' });
+    const blob = new Blob([new Uint8Array(data)], { type: 'font/woff2' });
     blobUrls.push(URL.createObjectURL(blob));
   }
 
