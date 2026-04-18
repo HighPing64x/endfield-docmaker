@@ -209,7 +209,6 @@ export const initializeTypst = async () => {
         ISSUERS.map(async (issuer) => {
           if (issuer.type === 'svg') {
             const { svg: recentered, scale } = await recenterSvg(issuer.raw);
-            console.log(issuer.key, scale);
             logoScales[issuer.key] = scale;
             const redTinted = tintSvg(recentered, [220, 0, 0]);
             const blackTinted = tintSvg(issuer.raw, [0, 0, 0], 0.25);
@@ -222,7 +221,6 @@ export const initializeTypst = async () => {
               tintImage(issuer.url, [210, 0, 0], 1, true),
               tintImage(issuer.url, [0, 0, 0], 0.25)
             ]);
-            console.log(issuer.key, scale);
             logoScales[issuer.key] = scale;
             await Promise.all([
               typst.mapShadow(`/stamp-${issuer.key}.png`, redTinted),
