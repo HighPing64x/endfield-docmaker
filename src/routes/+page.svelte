@@ -313,7 +313,7 @@
             </p>
           </object>
         {:else}
-          <div class="flex flex-col items-center justify-center gap-3 p-6">
+          <div class="flex flex-col items-center justify-center gap-3 p-6 sm:p-8">
             <Spinner class="size-10" />
             {#if packageLoadingState.name}
               <p class="text-muted-foreground text-sm">
