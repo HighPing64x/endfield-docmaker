@@ -10,7 +10,12 @@
   import * as Tabs from '$lib/components/ui/tabs';
   import { pick, triggerDownload } from '$lib/utils';
   import { onMount } from 'svelte';
-  import typst, { loadingState, packageLoadingState, waitForTypst } from '$lib/typst.svelte';
+  import typst, {
+    loadingState,
+    packageLoadingState,
+    downloadProgress,
+    waitForTypst
+  } from '$lib/typst.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
   import DynamicForm from '$lib/components/DynamicForm.svelte';
   import CompileError from '$lib/components/CompileError.svelte';
@@ -308,14 +313,39 @@
             </p>
           </object>
         {:else}
-          <div class="flex flex-col items-center justify-center gap-2 p-6">
+          <div class="flex flex-col items-center justify-center gap-3 p-6">
             <Spinner class="size-10" />
             {#if packageLoadingState.name}
               <p class="text-muted-foreground text-sm">
                 {m.loading_package({ name: packageLoadingState.name })}
               </p>
+              <!-- Package download: indeterminate progress bar -->
+              <div class="bg-muted h-1.5 w-48 overflow-hidden rounded-full">
+                <div
+                  class="bg-foreground/40 h-full w-1/3 animate-[progress-slide_1.2s_ease-in-out_infinite] rounded-full"
+                ></div>
+              </div>
             {:else if loadingState.status}
-              <p class="text-muted-foreground text-sm">{m[loadingState.status]()}</p>
+              <p class="text-muted-foreground text-sm">
+                {#if loadingState.status === 'loading_fonts' && downloadProgress.activeFiles.length > 0}
+                  {#if downloadProgress.activeFiles.length > 3}
+                    {m.loading_fonts_count({ count: String(downloadProgress.activeFiles.length) })}
+                  {:else}
+                    {m.loading_fonts_named({ files: downloadProgress.activeFiles.join(', ') })}
+                  {/if}
+                {:else}
+                  {m[loadingState.status]()}
+                {/if}
+              </p>
+              {#if loadingState.status === 'loading_fonts' && downloadProgress.progress > 0 && downloadProgress.progress < 1}
+                <!-- Font download: determinate progress bar -->
+                <div class="bg-muted h-1.5 w-48 overflow-hidden rounded-full">
+                  <div
+                    class="bg-foreground/60 h-full rounded-full transition-[width] duration-200 ease-out"
+                    style="width: {downloadProgress.progress * 100}%"
+                  ></div>
+                </div>
+              {/if}
             {/if}
           </div>
         {/if}

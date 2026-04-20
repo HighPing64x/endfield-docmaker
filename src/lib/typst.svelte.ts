@@ -40,7 +40,16 @@ export const DEFAULT_FONTS: { name: string; url: string }[] = [
 // ── Reactive state ─────────────────────────────────────────────────────
 
 export const loadingState: { status: LoadingStatus } = $state({ status: '' });
-export const packageLoadingState: { name: string | null } = $state({ name: null });
+export const packageLoadingState: { name: string | null; downloaded: number } = $state({
+  name: null,
+  downloaded: 0
+});
+
+/** Download progress for fonts or any batch download (0 → 1, plus active file names). */
+export const downloadProgress: { progress: number; activeFiles: string[] } = $state({
+  progress: 0,
+  activeFiles: []
+});
 
 // ── Worker management ──────────────────────────────────────────────────
 
@@ -87,6 +96,7 @@ function getWorker(): Worker {
 
       case 'packageLoading':
         packageLoadingState.name = msg.name;
+        packageLoadingState.downloaded = msg.downloaded;
         break;
 
       case 'initDone':
@@ -164,10 +174,20 @@ export const initializeTypst = async () => {
   if (isInitialized) return;
 
   initializationPromise = (async () => {
-    // 1. Load fonts (main thread, with IndexedDB caching)
+    // 1. Load fonts (main thread, with IndexedDB caching + progress tracking)
     loadingState.status = 'loading_fonts';
+    downloadProgress.progress = 0;
+    downloadProgress.activeFiles = [];
+
     const fontsVersion: string = __FONTS_VERSION__;
-    const defaultFontBlobUrls = await loadFontsWithCache(DEFAULT_FONTS, fontsVersion);
+    const defaultFontBlobUrls = await loadFontsWithCache(DEFAULT_FONTS, fontsVersion, (p) => {
+      downloadProgress.progress = p.progress;
+      downloadProgress.activeFiles = p.activeFiles;
+    });
+
+    // Reset download progress after fonts are loaded
+    downloadProgress.progress = 0;
+    downloadProgress.activeFiles = [];
 
     // Fetch raw data for each default font (from the blob URLs)
     const defaultFontData = await Promise.all(

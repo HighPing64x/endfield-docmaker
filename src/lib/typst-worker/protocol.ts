@@ -59,8 +59,10 @@ export interface StatusMessage {
 
 export interface PackageLoadingMessage {
   type: 'packageLoading';
-  /** Package display name, or `null` when download completed. */
+  /** Package display name, or `null` when all downloads completed. */
   name: string | null;
+  /** Number of packages downloaded so far (including current). */
+  downloaded: number;
 }
 
 export interface InitDoneMessage {

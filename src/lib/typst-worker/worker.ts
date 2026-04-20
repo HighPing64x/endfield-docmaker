@@ -48,6 +48,7 @@ const isTarData = (data: Uint8Array): boolean =>
 
 class WorkerPackageRegistry extends FetchPackageRegistry {
   private basePath: string;
+  private downloadCount = 0;
 
   constructor(am: WritableAccessModel, basePath: string) {
     super(am);
@@ -57,9 +58,10 @@ class WorkerPackageRegistry extends FetchPackageRegistry {
   pullPackageData(path: PackageSpec): Uint8Array | undefined {
     const url = this.resolvePath(path);
     const label = `${path.namespace}/${path.name}:${path.version}`;
+    this.downloadCount++;
 
     // Notify main thread about the download
-    post({ type: 'packageLoading', name: label });
+    post({ type: 'packageLoading', name: label, downloaded: this.downloadCount });
 
     const request = new XMLHttpRequest();
     request.overrideMimeType('text/plain; charset=x-user-defined');
@@ -67,7 +69,7 @@ class WorkerPackageRegistry extends FetchPackageRegistry {
     request.send(null);
 
     // Notify main thread download finished
-    post({ type: 'packageLoading', name: null });
+    post({ type: 'packageLoading', name: null, downloaded: this.downloadCount });
 
     if (
       request.status === 200 &&
