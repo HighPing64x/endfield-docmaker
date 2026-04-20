@@ -44,6 +44,11 @@ export const packageLoadingState: { name: string | null } = $state({ name: null 
 
 // ── Worker management ──────────────────────────────────────────────────
 
+/** Create a standalone ArrayBuffer copy of a typed array, safe for transfer. */
+function detachBuffer(data: Uint8Array): ArrayBuffer {
+  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+}
+
 let worker: Worker | null = null;
 let nextId = 1;
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- internal bookkeeping, not reactive state
@@ -175,9 +180,7 @@ export const initializeTypst = async () => {
     // Load custom fonts
     const allCached = await getAllFonts();
     const customFonts = allCached.filter((f) => f.custom);
-    const customFontData = customFonts.map(
-      (f) => new Uint8Array(f.data).buffer.slice(0) as ArrayBuffer
-    );
+    const customFontData = customFonts.map((f) => detachBuffer(new Uint8Array(f.data)));
 
     const fontData = [...defaultFontData, ...customFontData];
 
@@ -195,11 +198,11 @@ export const initializeTypst = async () => {
           logoMappings.push(
             {
               path: `/stamp-${issuer.key}.svg`,
-              data: redTinted.buffer.slice(0) as ArrayBuffer
+              data: detachBuffer(redTinted)
             },
             {
               path: `/watermark-${issuer.key}.svg`,
-              data: blackTinted.buffer.slice(0) as ArrayBuffer
+              data: detachBuffer(blackTinted)
             }
           );
         } else {
@@ -211,11 +214,11 @@ export const initializeTypst = async () => {
           logoMappings.push(
             {
               path: `/stamp-${issuer.key}.png`,
-              data: redTinted.buffer.slice(0) as ArrayBuffer
+              data: detachBuffer(redTinted)
             },
             {
               path: `/watermark-${issuer.key}.png`,
-              data: blackTinted.buffer.slice(0) as ArrayBuffer
+              data: detachBuffer(blackTinted)
             }
           );
         }
@@ -268,7 +271,7 @@ async function addSource(path: string, content: string): Promise<void> {
 }
 
 async function mapShadow(path: string, data: Uint8Array): Promise<void> {
-  const buf = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  const buf = detachBuffer(data);
   await request({ type: 'mapShadow', path, data: buf }, [buf]);
 }
 
