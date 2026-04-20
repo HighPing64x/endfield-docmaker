@@ -59,7 +59,8 @@ export async function downloadAll(
       rafPending = false;
       const totalBytes = totals.reduce((a, b) => a + b, 0);
       const loadedBytes = loaded.reduce((a, b) => a + b, 0);
-      const progress = totalBytes > 0 ? loadedBytes / totalBytes : totalKnown / items.length;
+      const progress =
+        totalBytes > 0 ? loadedBytes / totalBytes : Math.min(totalKnown / items.length, 1);
       onProgress({ progress: Math.min(progress, 1), activeFiles: [...active] });
     });
   };
@@ -119,11 +120,4 @@ export async function downloadAll(
   onProgress?.({ progress: 1, activeFiles: [] });
 
   return results;
-}
-
-/** Format active file names for display. If too many, show count instead. */
-export function formatActiveFiles(files: string[], maxDisplay: number = 3): string {
-  if (files.length === 0) return '';
-  if (files.length <= maxDisplay) return files.join(', ');
-  return String(files.length);
 }

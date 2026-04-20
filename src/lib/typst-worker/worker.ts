@@ -124,10 +124,10 @@ class WorkerPackageRegistry extends FetchPackageRegistry {
     context.untar(normalizedData, (entryPath: string, entryData: Uint8Array, mtime: number) => {
       entries.push([previewDir + '/' + entryPath, entryData, new Date(mtime)]);
     });
-    const am = this.am;
+    const accessModel = this.am;
     const cacheClosure = () => {
-      for (const [p, d, mt] of entries) {
-        am.insertFile(p, d, mt);
+      for (const [entryPath, entryData, mtime] of entries) {
+        accessModel.insertFile(entryPath, entryData, mtime);
       }
       return previewDir;
     };
