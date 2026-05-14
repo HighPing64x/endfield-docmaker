@@ -17,7 +17,7 @@ export interface TestpaperValues {
   examInfo: KvEntry[];
   showAnswer: boolean;
   parJustify: boolean;
-  showSecret: boolean;
+  secret: string;
   showScoreBox: boolean;
   docContent: string;
 }
@@ -33,7 +33,7 @@ export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
   gridCols: 4,
-  storageVersion: 2,
+  storageVersion: 3,
   fields: [
     {
       type: 'select',
@@ -69,6 +69,13 @@ export const testpaperTemplate: TemplateDefinition = {
       key: 'examType',
       label: () => m.testpaper_exam_type(),
       placeholder: () => 'A',
+      colspan: 1
+    },
+    {
+      type: 'text',
+      key: 'secret',
+      label: () => m.testpaper_secret(),
+      placeholder: () => m.testpaper_secret_placeholder(),
       colspan: 1
     },
     {
@@ -111,12 +118,6 @@ export const testpaperTemplate: TemplateDefinition = {
     },
     {
       type: 'toggle',
-      key: 'showSecret',
-      label: () => m.testpaper_show_secret(),
-      colspan: 1
-    },
-    {
-      type: 'toggle',
       key: 'showScoreBox',
       label: () => m.testpaper_show_score_box(),
       colspan: 1
@@ -150,7 +151,7 @@ export const testpaperTemplate: TemplateDefinition = {
     examInfo: [{ key: '命题组', value: '终末地工业' }] satisfies KvEntry[],
     showAnswer: false,
     parJustify: true,
-    showSecret: true,
+    secret: '绝密',
     showScoreBox: true,
     docContent: `\
 #notice(
@@ -338,8 +339,8 @@ export const testpaperTemplate: TemplateDefinition = {
       `#subject[${escapeTypst(v.subject)}]`
     ];
 
-    if (v.showSecret) {
-      lines.push('#secret()');
+    if (v.secret.trim()) {
+      lines.push(`#secret(body: [${escapeTypst(v.secret)}★启用前])`);
     }
 
     if (v.showScoreBox) {

@@ -77,7 +77,8 @@
   "testpaper_par_justify": "Justify Paragraphs",
   "testpaper_show_answer": "Show Answers",
   "testpaper_show_score_box": "Show Score Box",
-  "testpaper_show_secret": "Show Secret Mark",
+  "testpaper_secret": "Security Level",
+  "testpaper_secret_placeholder": "Top Secret",
   "testpaper_subject": "Subject",
   "testpaper_subject_placeholder": "Mathematics",
   "testpaper_title": "Paper Title",
@@ -85,4 +86,4 @@
   "testpaper_year": "Year (Talosian Calendar)",
   "toggle_theme": "Toggle theme",
   "view_on_github": "View on GitHub"
-}
+  }
