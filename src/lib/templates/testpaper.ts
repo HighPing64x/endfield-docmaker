@@ -32,7 +32,7 @@ const parseYear = (raw: string): number => {
 export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
-  gridCols: 4,
+  gridCols: 3,
   storageVersion: 3,
   fields: [
     {
@@ -66,6 +66,13 @@ export const testpaperTemplate: TemplateDefinition = {
     },
     {
       type: 'text',
+      key: 'secret',
+      label: () => m.testpaper_secret(),
+      placeholder: () => m.testpaper_secret_placeholder(),
+      colspan: 1
+    },
+    {
+      type: 'text',
       key: 'examType',
       label: () => m.testpaper_exam_type(),
       placeholder: () => 'A',
@@ -73,9 +80,9 @@ export const testpaperTemplate: TemplateDefinition = {
     },
     {
       type: 'text',
-      key: 'secret',
-      label: () => m.testpaper_secret(),
-      placeholder: () => m.testpaper_secret_placeholder(),
+      key: 'examDuration',
+      label: () => m.testpaper_exam_duration(),
+      placeholder: () => '120分钟',
       colspan: 1
     },
     {
@@ -90,13 +97,6 @@ export const testpaperTemplate: TemplateDefinition = {
       key: 'subject',
       label: () => m.testpaper_subject(),
       placeholder: () => m.testpaper_subject_placeholder(),
-      colspan: 1
-    },
-    {
-      type: 'text',
-      key: 'examDuration',
-      label: () => m.testpaper_exam_duration(),
-      placeholder: () => '120分钟',
       colspan: 1
     },
     {
