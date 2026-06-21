@@ -77,7 +77,8 @@
   "testpaper_par_justify": "段落两端对齐",
   "testpaper_show_answer": "显示答案",
   "testpaper_show_score_box": "显示评分框",
-  "testpaper_show_secret": "显示密级",
+  "testpaper_secret": "密级",
+  "testpaper_secret_placeholder": "绝密",
   "testpaper_subject": "科目",
   "testpaper_subject_placeholder": "数学",
   "testpaper_title": "试卷标题",
@@ -85,4 +86,4 @@
   "testpaper_year": "年份（塔罗斯历）",
   "toggle_theme": "切换主题",
   "view_on_github": "在 GitHub 上查看"
-}
+  }
