@@ -1,8 +1,8 @@
 <div align="center">
 
-# 终末地文档生成器
+# 红头文件生成器
 
-**用于生成《明日方舟：终末地》游戏世界观中各机构签发的文档的工具**
+**基于“用于生成《明日方舟：终末地》游戏世界观中各机构签发的文档的工具”而制作的更真实的红头文件的生成工具**
 
 [![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev)
 [![Typst](https://img.shields.io/badge/Typst-WebAssembly-239DAD?logo=typst&logoColor=white)](https://typst.app)
@@ -12,6 +12,7 @@
 </div>
 
 > [!IMPORTANT]
+> 本存储库基于Naptie大佬的终末地红头文件生成器制作而来 如果侵权请联系或直接写issue 我会删除
 > 该工具仅供娱乐与学习交流之用，请在合理、合法的范围内使用。  
 > 该工具本身无法在不修改代码的前提下仿造真实文件或真实存在的机构签发的文件。  
 > 因对该工具的不合理使用而产生的任何直接或间接责任、损失或纠纷，使用者自行承担。  
@@ -33,9 +34,7 @@
 
 ## 部署
 
-- GitHub Pages: https://naptie.github.io/endfield-docmaker/
-- Cloudflare: https://endfield-docmaker.phi.zone/
-- Vercel: https://endfield.phi.zone/docmaker/
+- GitHub Pages: https://highping64x.github.io/endfield-docmaker/
 
 ## 技术栈
 
