@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [DocMaker]   # 从 main 改为 DocMaker
   workflow_dispatch:
 
 permissions:
