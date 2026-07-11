@@ -117,4 +117,4 @@ pnpm build
 
 ## 星标历史
 
-[![Stargazers over time](https://starchart.cc/HighPing64x/endfield-docmaker.svg?variant=adaptive)](https://starchart.cc/Naptie/endfield-docmaker)
+[![Stargazers over time](https://starchart.cc/HighPing64x/endfield-docmaker.svg?variant=adaptive)](https://starchart.cc/HighPing64x/endfield-docmaker)
