@@ -114,7 +114,3 @@ pnpm build
 - [ezexam](https://github.com/gbchu/ezexam) — 试卷模板
 - [typst.ts](https://github.com/Myriad-Dreamin/typst.ts) — [Typst](https://typst.app) WebAssembly 编译器
 - [shadcn-svelte](https://www.shadcn-svelte.com) — UI 组件库
-
-## 星标历史
-
-[![Stargazers over time](https://starchart.cc/HighPing64x/endfield-docmaker.svg?variant=adaptive)](https://starchart.cc/HighPing64x/endfield-docmaker)
