@@ -8,5 +8,12 @@ export type IssuerKey = (typeof ISSUERS)[number]['key'];
 
 export type Authority = {
   faction: IssuerKey;
+  prefix?: string;
   name: string;
+};
+
+export type UploadedImage = {
+  name: string;
+  type: string;
+  dataUrl: string;
 };

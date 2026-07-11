@@ -8,6 +8,8 @@
   import AuthoritiesList from '$lib/components/AuthoritiesList.svelte';
   import KvGrid from '$lib/components/KvGrid.svelte';
   import FileList from '$lib/components/FileList.svelte';
+  import ImageUpload from '$lib/components/ImageUpload.svelte';
+  import type { UploadedImage } from '$lib/types';
   import type { FormField, TemplateDefinition } from '$lib/templates/types';
 
   let {
@@ -242,6 +244,17 @@
       onchange={onfileschange}
       {disabled}
     />
+  {:else if field.type === 'image-upload'}
+    <div class={span}>
+      <ImageUpload
+        value={(values[field.key] as UploadedImage | null) ?? null}
+        label={field.label()}
+        description={field.description?.()}
+        accept={field.accept}
+        onchange={(v) => update(field.key, v)}
+        {disabled}
+      />
+    </div>
   {:else if field.type === 'custom'}
     <div class={span}>
       <field.component bind:value={values[field.key]} {disabled} />

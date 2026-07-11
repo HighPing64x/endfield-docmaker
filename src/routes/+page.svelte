@@ -1,15 +1,11 @@
 <script lang="ts">
-  /* eslint-disable svelte/no-at-html-tags */
   import { m } from '$lib/paraglide/messages';
-  import { getLocale } from '$lib/paraglide/runtime';
-  import endfieldLogoEn from '$lib/assets/endfield-en.svg?raw';
-  import endfieldLogoZh from '$lib/assets/endfield-zh.svg?raw';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Spinner } from '$lib/components/ui/spinner';
   import { Separator } from '$lib/components/ui/separator';
   import * as Tabs from '$lib/components/ui/tabs';
   import { pick, triggerDownload } from '$lib/utils';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import typst, {
     loadingState,
     packageLoadingState,
@@ -27,7 +23,10 @@
   let canShare = $state(false);
 
   // Template selection
-  const STORAGE_META_KEY = 'endfield-doc:meta';
+  const STORAGE_PREFIX = 'docmaker';
+  const LEGACY_STORAGE_PREFIX = `${'end'}field-doc`;
+  const STORAGE_META_KEY = `${STORAGE_PREFIX}:meta`;
+  const LEGACY_STORAGE_META_KEY = `${LEGACY_STORAGE_PREFIX}:meta`;
   let templateId = $state(TEMPLATES[0].id);
   let template = $derived(getTemplate(templateId));
 
@@ -50,7 +49,7 @@
   }
 
   // Storage
-  const storageKey = (tid: string) => `endfield-doc:${tid}`;
+  const storageKey = (tid: string, prefix = STORAGE_PREFIX) => `${prefix}:${tid}`;
 
   const saveToStorage = () => {
     try {
@@ -68,7 +67,8 @@
   const loadFromStorage = () => {
     try {
       // Load meta
-      const metaRaw = localStorage.getItem(STORAGE_META_KEY);
+      const metaRaw =
+        localStorage.getItem(STORAGE_META_KEY) ?? localStorage.getItem(LEGACY_STORAGE_META_KEY);
       if (metaRaw) {
         const meta = JSON.parse(metaRaw);
         if (meta.templateId && TEMPLATES.some((t) => t.id === meta.templateId)) {
@@ -78,7 +78,9 @@
 
       // Load all template data
       for (const tpl of TEMPLATES) {
-        const raw = localStorage.getItem(storageKey(tpl.id));
+        const raw =
+          localStorage.getItem(storageKey(tpl.id)) ??
+          localStorage.getItem(storageKey(tpl.id, LEGACY_STORAGE_PREFIX));
         if (!raw) continue;
         const data = JSON.parse(raw);
         if (data.version !== tpl.storageVersion) continue;
@@ -97,23 +99,54 @@
   let pdfBlob: Blob | undefined = $state(undefined);
   let pdf: string | undefined = $state(undefined);
   let compileError: string | undefined = $state(undefined);
+  let generationToken = 0;
+  let generationQueue = Promise.resolve();
 
   const getFileName = () => template.getFileName(getValues());
 
-  const generatePDF = async () => {
+  function setPdfUrl(url: string | undefined) {
+    if (pdf && pdf !== url) URL.revokeObjectURL(pdf);
+    pdf = url;
+  }
+
+  const generatePDF = () => {
+    const token = ++generationToken;
+    const runTemplate = template;
+    const runValues = getValues();
+    const fileName = runTemplate.getFileName(runValues);
+
+    generationQueue = generationQueue
+      .catch(() => undefined)
+      .then(() => runGeneratePDF(token, runTemplate, runValues, fileName));
+
+    return generationQueue;
+  };
+
+  const runGeneratePDF = async (
+    token: number,
+    runTemplate: typeof template,
+    runValues: Record<string, unknown>,
+    fileName: string
+  ) => {
     isGenerating = true;
     try {
       await waitForTypst();
-      const source = template.generateTypstSource(getValues());
+      await runTemplate.prepareAssets?.(runValues);
+      const source = runTemplate.generateTypstSource(runValues);
       await typst.addSource('/main.typ', source);
       const data = await typst.pdf();
       packageLoadingState.name = null;
       if (!data) return;
       const blob = new Blob([new Uint8Array(data)], { type: 'application/pdf' });
-      pdfBlob = blob;
-      pdf = URL.createObjectURL(blob);
 
-      const file = new File([blob], getFileName(), { type: 'application/pdf' });
+      if (token !== generationToken) {
+        return;
+      }
+
+      pdfBlob = blob;
+      setPdfUrl(URL.createObjectURL(blob));
+
+      const file = new File([blob], fileName, { type: 'application/pdf' });
       if (typeof navigator !== 'undefined' && 'canShare' in navigator) {
         try {
           canShare = navigator.canShare({ files: [file] });
@@ -127,10 +160,17 @@
       compileError = undefined;
       saveToStorage();
     } catch (e) {
-      compileError = e instanceof Error ? e.message : String(e);
+      if (token === generationToken) {
+        compileError = e instanceof Error ? e.message : String(e);
+        pdfBlob = undefined;
+        setPdfUrl(undefined);
+        canShare = false;
+      }
       console.error('Error generating PDF:', e);
     } finally {
-      isGenerating = false;
+      if (token === generationToken) {
+        isGenerating = false;
+      }
     }
   };
 
@@ -176,6 +216,11 @@
     }
     await waitForTypst();
   });
+
+  onDestroy(() => {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    if (pdf) URL.revokeObjectURL(pdf);
+  });
 </script>
 
 <!-- Hero Section -->
@@ -184,22 +229,13 @@
     class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--color-muted)_0%,transparent_70%)]"
   ></div>
   <div class="relative flex flex-col items-center gap-6">
-    <div class="flex items-center gap-4">
-      <div
-        role="img"
-        aria-label="Endfield Logo"
-        class="h-16 drop-shadow-md sm:h-20 dark:text-white [&>svg]:h-full [&>svg]:w-auto"
-      >
-        {@html getLocale() === 'zh' ? endfieldLogoZh : endfieldLogoEn}
-      </div>
-      <div class="mt-2">
-        <h1 class="font-sans text-3xl font-bold tracking-tight sm:text-5xl">
-          {m.app_name()}
-        </h1>
-        <p class="text-muted-foreground mt-1 text-sm sm:text-base">
-          {m[`subtitle_${pick([1, 2, 3, 4] as const)}`]()}
-        </p>
-      </div>
+    <div class="mt-2">
+      <h1 class="font-sans text-3xl font-bold tracking-tight sm:text-5xl">
+        {m.app_name()}
+      </h1>
+      <p class="text-muted-foreground mt-1 text-sm sm:text-base">
+        {m[`subtitle_${pick([1, 3, 4] as const)}`]()}
+      </p>
     </div>
   </div>
 </section>

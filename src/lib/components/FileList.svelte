@@ -32,6 +32,7 @@
   let files = $state<StoredFile[]>([]);
   let editingIndex = $state<number | null>(null);
   let editingName = $state('');
+  let mappedNames = new Set<string>();
   /** Track which templates have already had defaults seeded in this session. */
   const seededTemplates: string[] = [];
 
@@ -68,9 +69,16 @@
   /** Sync all files into Typst's virtual filesystem. */
   async function syncVFS() {
     await waitForTypst();
+    const nextNames = new Set(files.map((f) => f.name));
+    for (const name of mappedNames) {
+      if (!nextNames.has(name)) {
+        await unmapVFS(name);
+      }
+    }
     for (const f of files) {
       await typst.mapShadow(`/${f.name}`, f.data);
     }
+    mappedNames = nextNames;
   }
 
   /** Remove a file from Typst VFS. */
@@ -91,6 +99,9 @@
   onDestroy(() => {
     for (const url of Object.values(previewUrls)) {
       URL.revokeObjectURL(url);
+    }
+    for (const name of mappedNames) {
+      void unmapVFS(name);
     }
   });
 

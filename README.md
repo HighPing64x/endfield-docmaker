@@ -1,8 +1,8 @@
 <div align="center">
 
-# 终末地文档生成器
+# 文档生成器
 
-**用于生成《明日方舟：终末地》游戏世界观中各机构签发的文档的工具**
+**用于在浏览器中生成公文、试卷等 PDF 文档的工具**
 
 [![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev)
 [![Typst](https://img.shields.io/badge/Typst-WebAssembly-239DAD?logo=typst&logoColor=white)](https://typst.app)
@@ -33,9 +33,9 @@
 
 ## 部署
 
-- GitHub Pages: https://naptie.github.io/endfield-docmaker/
-- Cloudflare: https://endfield-docmaker.phi.zone/
-- Vercel: https://endfield.phi.zone/docmaker/
+- GitHub Pages: `https://<user>.github.io/docmaker/`
+- Cloudflare Pages: `https://docmaker.<domain>/`
+- Vercel: `https://<domain>/docmaker/`
 
 ## 技术栈
 
@@ -53,7 +53,7 @@
 ## 项目结构
 
 ```
-endfield-docmaker/
+docmaker/
 ├── messages/
 │   ├── en.json                     # 英文本地化文本
 │   └── zh.json                     # 中文本地化文本
@@ -111,11 +111,11 @@ pnpm build
 
 - [ParaN3xus](https://github.com/ParaN3xus) — 红头公文模板 (`official-doc.typ`)
 - [Lonyou](https://github.com/Vkango) — 圆形公章模板 (`tuzhang.typ`)
-- [Cuilb](https://www.xiaohongshu.com/user/profile/5ed7a1e1000000000101cef8) — 罗德岛、宏科院、联盟工团、环塔商会矢量复刻 Logo
+- [Cuilb](https://www.xiaohongshu.com/user/profile/5ed7a1e1000000000101cef8) — 示例机构矢量 Logo
 - [ezexam](https://github.com/gbchu/ezexam) — 试卷模板
 - [typst.ts](https://github.com/Myriad-Dreamin/typst.ts) — [Typst](https://typst.app) WebAssembly 编译器
 - [shadcn-svelte](https://www.shadcn-svelte.com) — UI 组件库
 
 ## 星标历史
 
-[![Stargazers over time](https://starchart.cc/Naptie/endfield-docmaker.svg?variant=adaptive)](https://starchart.cc/Naptie/endfield-docmaker)
+[![Stargazers over time](https://starchart.cc/Naptie/DocMaker.svg?variant=adaptive)](https://starchart.cc/Naptie/DocMaker)

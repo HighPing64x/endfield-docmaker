@@ -48,10 +48,12 @@ const isTarData = (data: Uint8Array): boolean =>
 
 class WorkerPackageRegistry extends FetchPackageRegistry {
   private basePath: string;
+  private accessModel: WritableAccessModel;
   private downloadCount = 0;
 
   constructor(am: WritableAccessModel, basePath: string) {
     super(am);
+    this.accessModel = am;
     this.basePath = basePath;
   }
 
@@ -124,7 +126,7 @@ class WorkerPackageRegistry extends FetchPackageRegistry {
     context.untar(normalizedData, (entryPath: string, entryData: Uint8Array, mtime: number) => {
       entries.push([previewDir + '/' + entryPath, entryData, new Date(mtime)]);
     });
-    const accessModel = this.am;
+    const accessModel = this.accessModel;
     const cacheClosure = () => {
       for (const [entryPath, entryData, mtime] of entries) {
         accessModel.insertFile(entryPath, entryData, mtime);

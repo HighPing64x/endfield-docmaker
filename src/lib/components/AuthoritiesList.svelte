@@ -5,7 +5,7 @@
   import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
   import Button from '$lib/components/ui/button/button.svelte';
   import DraggableList from '$lib/components/DraggableList.svelte';
-  import { ISSUERS } from '$lib/constants';
+  import { ISSUERS, normalizeIssuerKey } from '$lib/constants';
   import { pick } from '$lib/utils';
   import type { Authority } from '$lib/types';
   import PlusIcon from '@lucide/svelte/icons/plus';
@@ -33,8 +33,28 @@
     onchange?: (value: Authority[]) => void;
   } = $props();
 
+  function defaultPrefix(faction: Authority['faction']) {
+    return m[`prefix_${normalizeIssuerKey(faction)}`]();
+  }
+
+  function displayPrefix(auth: Authority) {
+    return auth.prefix ?? defaultPrefix(auth.faction);
+  }
+
   function updateFaction(i: number, auth: Authority, faction: string) {
-    value[i] = { ...auth, faction: faction as Authority['faction'] };
+    const nextFaction = normalizeIssuerKey(faction);
+    const currentPrefix = auth.prefix?.trim() ?? '';
+    const shouldFollowFaction = currentPrefix === '' || currentPrefix === defaultPrefix(auth.faction);
+    value[i] = {
+      ...auth,
+      faction: nextFaction,
+      prefix: shouldFollowFaction ? defaultPrefix(nextFaction) : auth.prefix
+    };
+    onchange?.(value);
+  }
+
+  function updatePrefix(i: number, auth: Authority, prefix: string) {
+    value[i] = { ...auth, prefix };
     onchange?.(value);
   }
 
@@ -47,6 +67,19 @@
     value = newItems;
     onchange?.(value);
   }
+
+  function addAuthority() {
+    const faction = pick(Array.from(ISSUERS)).key;
+    value = [
+      ...value,
+      {
+        faction,
+        prefix: defaultPrefix(faction),
+        name: pick(authorityNames)
+      }
+    ];
+    onchange?.(value);
+  }
 </script>
 
 <div class="space-y-3">
@@ -57,16 +90,7 @@
         variant="outline"
         size="xs"
         class="cursor-pointer text-xs"
-        onclick={() => {
-          value = [
-            ...value,
-            {
-              faction: pick(Array.from(ISSUERS)).key,
-              name: pick(authorityNames)
-            }
-          ];
-          onchange?.(value);
-        }}
+        onclick={addAuthority}
         {disabled}
       >
         <PlusIcon class="size-3" />
@@ -76,27 +100,36 @@
   </div>
   <DraggableList items={value} onchange={handleListChange} {disabled}>
     {#snippet renderItem(auth, i)}
-      <div class="flex">
+      {@const faction = normalizeIssuerKey(auth.faction)}
+      <div class="flex flex-col gap-2 sm:flex-row sm:gap-0">
         <Select
           type="single"
-          value={auth.faction}
+          value={faction}
           onValueChange={(v) => updateFaction(i, auth, v)}
           {disabled}
         >
-          <SelectTrigger class="w-auto shrink-0 rounded-r-none border-r-0">
-            {m[`prefix_${auth.faction}`]()}
+          <SelectTrigger class="w-full shrink-0 sm:w-36 sm:rounded-r-none sm:border-r-0">
+            {m[`issuer_${faction}`]()}
           </SelectTrigger>
           <SelectContent>
             {#each ISSUERS as iss (iss.key)}
-              <SelectItem value={iss.key} label={m[`prefix_${iss.key}`]()} />
+              <SelectItem value={iss.key} label={m[`issuer_${iss.key}`]()} />
             {/each}
           </SelectContent>
         </Select>
         <Input
+          value={displayPrefix(auth)}
+          oninput={(e) => updatePrefix(i, auth, e.currentTarget.value)}
+          placeholder={m.authority_prefix_placeholder()}
+          {disabled}
+          class="sm:w-24 sm:rounded-none sm:border-r-0"
+        />
+        <Input
           value={auth.name}
           oninput={(e) => updateName(i, auth, e.currentTarget.value)}
+          placeholder={m.authority_name_placeholder()}
           {disabled}
-          class="rounded-l-none"
+          class="sm:rounded-l-none"
         />
       </div>
     {/snippet}

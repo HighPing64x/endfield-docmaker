@@ -6,7 +6,8 @@
  *  - `fonts`: cached font blobs for Typst
  */
 
-const DB_NAME = 'endfield-docmaker';
+const DB_NAME = 'docmaker';
+const LEGACY_DB_NAMES = [`${'end'}field-docmaker`];
 const DB_VERSION = 2;
 export const FILES_STORE = 'files';
 export const FONTS_STORE = 'fonts';
@@ -36,14 +37,24 @@ export function openDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
+function deleteDB(name: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(name);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+    req.onblocked = () => resolve();
+  });
+}
+
 /** Clear all data from both IndexedDB stores. */
 export async function clearAllStores(): Promise<void> {
   const db = await openDB();
   const tx = db.transaction([FILES_STORE, FONTS_STORE], 'readwrite');
   tx.objectStore(FILES_STORE).clear();
   tx.objectStore(FONTS_STORE).clear();
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+  await Promise.all(LEGACY_DB_NAMES.map((name) => deleteDB(name)));
 }

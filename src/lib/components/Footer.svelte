@@ -21,7 +21,7 @@
       <span class="font-mono">v{version}</span>
       <span class="text-border">|</span>
       <a
-        href="https://github.com/Naptie/endfield-docmaker/commit/{commitHash}"
+        href="https://github.com/Naptie/DocMaker/commit/{commitHash}"
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-foreground font-mono transition-colors"
@@ -45,7 +45,7 @@
       <Button
         variant="ghost"
         size="sm"
-        href="https://github.com/Naptie/endfield-docmaker"
+        href="https://github.com/Naptie/DocMaker"
         target="_blank"
         rel="noopener noreferrer"
         class="text-muted-foreground hover:text-foreground"

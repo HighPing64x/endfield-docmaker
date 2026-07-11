@@ -1,6 +1,6 @@
 import type { TemplateDefinition } from './types';
 import type { IssuerKey } from '$lib/types';
-import { ISSUERS, getLogoScales, issuerExt } from '$lib/constants';
+import { ISSUERS, getLogoScales, issuerExt, normalizeIssuerKey } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
 import type { KvEntry } from '$lib/components/KvGrid.svelte';
 import img6 from '$lib/assets/misc/6.png?url';
@@ -33,7 +33,7 @@ export const testpaperTemplate: TemplateDefinition = {
   id: 'testpaper',
   name: () => m.template_testpaper(),
   gridCols: 3,
-  storageVersion: 3,
+  storageVersion: 4,
   fields: [
     {
       type: 'select',
@@ -143,12 +143,12 @@ export const testpaperTemplate: TemplateDefinition = {
   defaults: () => ({
     issuer: ISSUERS[0].key as string,
     year: '152',
-    title: '全文明环带普通高等学校招生统一考试',
+    title: '普通高等学校招生统一考试',
     subject: '数学',
     paperSize: 'a3',
     examType: 'A',
     examDuration: '120分钟',
-    examInfo: [{ key: '命题组', value: '终末地工业' }] satisfies KvEntry[],
+    examInfo: [{ key: '命题组', value: 'XXXXX' }] satisfies KvEntry[],
     showAnswer: false,
     parJustify: true,
     secret: '绝密',
@@ -308,6 +308,7 @@ export const testpaperTemplate: TemplateDefinition = {
   }),
   generateTypstSource: (values: Record<string, unknown>) => {
     const v = values as unknown as TestpaperValues;
+    const issuer = normalizeIssuerKey(v.issuer);
     const year = parseYear(v.year);
     const fullTitle = `${year}年${v.title}`;
 
@@ -316,8 +317,8 @@ export const testpaperTemplate: TemplateDefinition = {
       .map((e: KvEntry) => `${escapeTypst(e.key)}: "${escapeTypst(e.value)}"`)
       .join(', ');
 
-    const watermarkExt = issuerExt(v.issuer);
-    const watermarkScale = getLogoScales()[v.issuer] ?? 1;
+    const watermarkExt = issuerExt(issuer);
+    const watermarkScale = getLogoScales()[issuer] ?? 1;
     const isA4 = v.paperSize === 'a4';
     const watermarkWidth = isA4 ? '40%' : '20%';
     const paperVar = isA4 ? 'a4' : 'a3';
@@ -332,7 +333,7 @@ export const testpaperTemplate: TemplateDefinition = {
       `  par-justify: ${v.parJustify ? 'true' : 'false'},`,
       ')',
       '',
-      `#set page(background: place(center + horizon, block(width: ${watermarkWidth}, image("watermark-${v.issuer}.${watermarkExt}", width: ${watermarkScale} * 100%))))`,
+      `#set page(background: place(center + horizon, block(width: ${watermarkWidth}, image("watermark-${issuer}.${watermarkExt}", width: ${watermarkScale} * 100%))))`,
       '',
       `#chapter[${escapeTypst(fullTitle)}]`,
       `#title[${escapeTypst(fullTitle)}]`,

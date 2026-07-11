@@ -20,6 +20,7 @@ import { tintImage, tintSvg, recenterSvg } from '$lib/utils/image';
 import { dev } from '$app/environment';
 import { base } from '$app/paths';
 import { ISSUERS, setLogoScales } from './constants';
+import type { IssuerKey, UploadedImage } from './types';
 import { loadFontsWithCache, getAllFonts } from '$lib/stores/fonts';
 
 import type { WorkerResponse, LoadingStatus } from '$lib/typst-worker/protocol';
@@ -69,24 +70,39 @@ let initResolve: (() => void) | null = null;
 let initReject: ((e: Error) => void) | null = null;
 let initializationPromise: Promise<void> | null = null;
 let isInitialized = false;
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- binary asset cache, not UI state
+const watermarkAssetCache = new Map<string, Uint8Array>();
 
-function getWorker(): Worker {
-  if (worker) return worker;
-
-  // In dev mode, reuse existing worker across HMR updates
-  if (dev) {
-    const g = globalThis as typeof globalThis & { __typstWorker?: Worker };
-    if (g.__typstWorker) {
-      worker = g.__typstWorker;
-      return worker;
-    }
+const imageExt = (image: UploadedImage | null | undefined): 'svg' | 'png' | 'jpg' => {
+  const type = image?.type.toLowerCase() ?? '';
+  const name = image?.name.toLowerCase() ?? '';
+  if (type.includes('svg') || name.endsWith('.svg')) return 'svg';
+  if (type.includes('jpeg') || type.includes('jpg') || name.endsWith('.jpg') || name.endsWith('.jpeg')) {
+    return 'jpg';
   }
+  return 'png';
+};
 
-  worker = new Worker(new URL('./typst-worker/worker.ts', import.meta.url), {
-    type: 'module'
-  });
+const hashString = (value: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) + hash) ^ value.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(36);
+};
 
-  worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+const imageBytes = async (image: UploadedImage): Promise<Uint8Array> => {
+  const res = await fetch(image.dataUrl);
+  return new Uint8Array(await res.arrayBuffer());
+};
+
+const imageText = async (image: UploadedImage): Promise<string> => {
+  const res = await fetch(image.dataUrl);
+  return await res.text();
+};
+
+function attachWorkerHandlers(w: Worker) {
+  w.onmessage = (e: MessageEvent<WorkerResponse>) => {
     const msg = e.data;
 
     switch (msg.type) {
@@ -133,9 +149,38 @@ function getWorker(): Worker {
     }
   };
 
-  worker.onerror = (e) => {
+  w.onerror = (e) => {
+    const error = new Error(e.message || 'Typst worker error');
+    for (const [id, p] of pending) {
+      pending.delete(id);
+      p.reject(error);
+    }
+    initReject?.(error);
+    initResolve = null;
+    initReject = null;
+    initializationPromise = null;
     console.error('Typst worker error:', e);
   };
+}
+
+function getWorker(): Worker {
+  if (worker) return worker;
+
+  // In dev mode, reuse existing worker across HMR updates
+  if (dev) {
+    const g = globalThis as typeof globalThis & { __typstWorker?: Worker };
+    if (g.__typstWorker) {
+      worker = g.__typstWorker;
+      attachWorkerHandlers(worker);
+      return worker;
+    }
+  }
+
+  worker = new Worker(new URL('./typst-worker/worker.ts', import.meta.url), {
+    type: 'module'
+  });
+
+  attachWorkerHandlers(worker);
 
   if (dev) {
     (globalThis as typeof globalThis & { __typstWorker?: Worker }).__typstWorker = worker;
@@ -297,6 +342,64 @@ async function mapShadow(path: string, data: Uint8Array): Promise<void> {
 
 async function unmapShadow(path: string): Promise<void> {
   await request({ type: 'unmapShadow', path });
+}
+
+export async function prepareWatermarkAsset(issuerKey: IssuerKey, opacityPercent: number) {
+  await waitForTypst();
+  const issuer = ISSUERS.find((i) => i.key === issuerKey);
+  if (!issuer) return;
+
+  const opacity = Math.max(0, Math.min(100, opacityPercent)) / 100;
+  const cacheKey = `${issuerKey}:${opacity.toFixed(3)}`;
+  let data = watermarkAssetCache.get(cacheKey);
+
+  if (!data) {
+    if (issuer.type === 'svg') {
+      const { svg } = await recenterSvg(issuer.raw);
+      data = tintSvg(svg, [0, 0, 0], opacity);
+    } else {
+      data = (await tintImage(issuer.url, [0, 0, 0], opacity, true)).image;
+    }
+    watermarkAssetCache.set(cacheKey, data);
+  }
+
+  await mapShadow(`/watermark-${issuerKey}.${issuer.type}`, data);
+}
+
+export const customWatermarkExt = (image: UploadedImage | null | undefined) =>
+  imageExt(image) === 'svg' ? 'svg' : 'png';
+
+export const customStampExt = (image: UploadedImage | null | undefined) => imageExt(image);
+
+export async function prepareCustomWatermarkAsset(
+  image: UploadedImage | null | undefined,
+  opacityPercent: number
+) {
+  if (!image) return;
+  await waitForTypst();
+
+  const opacity = Math.max(0, Math.min(100, opacityPercent)) / 100;
+  const ext = customWatermarkExt(image);
+  const cacheKey = `custom-watermark:${hashString(image.dataUrl)}:${opacity.toFixed(3)}`;
+  let data = watermarkAssetCache.get(cacheKey);
+
+  if (!data) {
+    if (imageExt(image) === 'svg') {
+      const { svg } = await recenterSvg(await imageText(image));
+      data = tintSvg(svg, [0, 0, 0], opacity);
+    } else {
+      data = (await tintImage(image.dataUrl, [0, 0, 0], opacity, true)).image;
+    }
+    watermarkAssetCache.set(cacheKey, data);
+  }
+
+  await mapShadow(`/watermark-custom.${ext}`, data);
+}
+
+export async function prepareCustomStampAsset(image: UploadedImage | null | undefined) {
+  if (!image) return;
+  await waitForTypst();
+  await mapShadow(`/stamp-custom.${customStampExt(image)}`, await imageBytes(image));
 }
 
 async function pdf(): Promise<Uint8Array | undefined> {

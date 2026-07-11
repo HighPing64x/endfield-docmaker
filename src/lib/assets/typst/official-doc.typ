@@ -43,17 +43,27 @@
 }
 
 #let official-doc(
-  copy-no: 1,
+  copy-no: none,
   ref-no: 1,
   conf-level: "机密",
   conf-period: "1年",
   urgen-level: "平件",
   authorities: (),
   watermark-icon: none,
+  watermark-width: 40%,
+  watermark-dy: 0mm,
+  stamp-enabled: true,
   issuer: "✕✕✕",
   issuer-code: none,
   title: "✕✕✕✕✕关于✕✕✕✕✕✕的通知",
+  main-recipient: none,
+  attachment-note: none,
+  cc: none,
+  printer: none,
+  print-date: none,
   issue-date: datetime.today(),
+  header-top: 35mm,
+  red-line-thickness: 3pt,
   seed: 0,
   content,
 ) = {
@@ -76,17 +86,18 @@
   })
 
   set page(background: if watermark-icon != none {
-    place(center + horizon, block(width: 40%, watermark-icon))
+    place(center + horizon, dy: watermark-dy, block(width: watermark-width, watermark-icon))
   })
 
   set text(font: "FangSong", size: 16pt, lang: "zh")
 
-  if (conf-level != none and conf-period != none) or urgen-level != none {
+  if copy-no != none or (conf-level != none and conf-period != none) or urgen-level != none {
     place(left + top)[
-      #let no-str = "0" * (6 - str(copy-no).len()) + str(copy-no)
-
       #set text(font: "SimHei")
-      #no-str \
+      #if copy-no != none {
+        let no-str = "0" * (6 - str(copy-no).len()) + str(copy-no)
+        [#no-str \ ]
+      }
       #if conf-level != none and conf-period != none {
         [#conf-level★#conf-period \ ]
       }
@@ -94,9 +105,9 @@
         urgen-level
       }
     ]
-
-    pure-v(35mm)
   }
+
+  pure-v(header-top)
 
   align(center, {
     set text(font: "FZXiaoBiaoSong-B05", size: 36pt, fill: header-red)
@@ -139,7 +150,7 @@
     block(text(size: 16pt, ref-prefix + "〔" + str(issue-date.year()) + "〕" + str(ref-no) + "号")),
   )
 
-  line(length: 100%, stroke: 3pt + header-red)
+  line(length: 100%, stroke: red-line-thickness + header-red)
 
   pure-v(20mm)
 
@@ -149,6 +160,10 @@
   )
 
   pure-v(10mm)
+
+  if main-recipient != none and main-recipient != "" {
+    align(left, block(main-recipient + "："))
+  }
 
   set par(first-line-indent: (all: true, amount: 2em))
   let fakepar = context {
@@ -206,6 +221,11 @@
   ))
   content
 
+  if attachment-note != none and attachment-note != "" {
+    v(0.655em)
+    align(left)[#h(2em)附件：#attachment-note]
+  }
+
   v(7em)
 
   align(right)[
@@ -222,25 +242,33 @@
       ]
 
       #context {
-        if authorities.len() > 0 {
+        if authorities.len() > 0 and stamp-enabled {
           let positions = arrange(authorities.len(), 72pt, measure(text-content))
           let rng = gen-rng-f(seed)
           let params = ()
           for i in range(authorities.len()) {
             let authority = authorities.at(i)
+            let stamp-image = authority.at("stamp-image", default: none)
             let (dx, dy) = positions.at(i)
             (rng, params) = random-f(rng, size: 3)
             place(
               center + horizon,
               dx: dx + (3mm - params.at(0) * 6mm),
               dy: dy - params.at(1) * 5mm,
-              rotate(8deg - params.at(2) * 16deg, circular_stamp(
-                authority.name,
-                authority.icon,
-                inner_ring_width: 0pt,
-                text_color: stamp-red,
-                border_color: stamp-red,
-              )),
+              rotate(
+                8deg - params.at(2) * 16deg,
+                if stamp-image != none {
+                  box(width: 144pt, stamp-image)
+                } else {
+                  circular_stamp(
+                    authority.name,
+                    authority.icon,
+                    inner_ring_width: 0pt,
+                    text_color: stamp-red,
+                    border_color: stamp-red,
+                  )
+                },
+              ),
             )
           }
         }
@@ -249,4 +277,24 @@
       }
     ]
   ]
+
+  let imprint-date = if print-date == none { issue-date } else { print-date }
+  if (cc != none and cc != "") or (printer != none and printer != "") {
+    v(2em)
+    line(length: 100%, stroke: 0.35mm + black)
+    if cc != none and cc != "" {
+      text(size: 14pt, "抄送：" + cc + "。")
+      linebreak()
+      line(length: 100%, stroke: 0.25mm + black)
+    }
+    if printer != none and printer != "" {
+      box(width: 50%, text(size: 14pt, printer))
+      box(
+        width: 50%,
+        align(right, text(size: 14pt, imprint-date.display("[year padding:none]年[month padding:none]月[day padding:none]日") + "印发")),
+      )
+      linebreak()
+      line(length: 100%, stroke: 0.35mm + black)
+    }
+  }
 }

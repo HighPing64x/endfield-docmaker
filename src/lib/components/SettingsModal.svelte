@@ -40,6 +40,7 @@
   let isRefreshing = $state(false);
   let isClearing = $state(false);
   let dataCleared = $state(false);
+  const STORAGE_PREFIXES = ['docmaker:', `${'end'}field-doc:`];
 
   async function loadFonts() {
     allFonts = await getAllFonts();
@@ -111,7 +112,11 @@
     isClearing = true;
     try {
       await clearAllStores();
-      localStorage.clear();
+      for (const key of Object.keys(localStorage)) {
+        if (STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+          localStorage.removeItem(key);
+        }
+      }
       dataCleared = true;
     } catch (e) {
       console.error('Error clearing data:', e);
@@ -258,7 +263,7 @@
                 >{m.settings_commit()}</Label
               >
               <a
-                href="https://github.com/Naptie/endfield-docmaker/commit/{commitHash}"
+                href="https://github.com/Naptie/DocMaker/commit/{commitHash}"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-foreground font-mono text-xs underline"
@@ -276,7 +281,7 @@
                 variant="outline"
                 size="sm"
                 class="cursor-pointer text-xs"
-                href="https://github.com/Naptie/endfield-docmaker"
+                href="https://github.com/Naptie/DocMaker"
                 target="_blank"
               >
                 <GithubIcon class="size-4" />
@@ -286,7 +291,7 @@
                 variant="outline"
                 size="sm"
                 class="cursor-pointer text-xs"
-                href="https://github.com/Naptie/endfield-docmaker/issues/new"
+                href="https://github.com/Naptie/DocMaker/issues/new"
                 target="_blank"
               >
                 <BugIcon class="size-4" />

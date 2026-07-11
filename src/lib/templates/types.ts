@@ -68,6 +68,12 @@ export interface FileListField extends BaseField {
   defaultFiles?: { name: string; url: string }[];
 }
 
+export interface ImageUploadField extends BaseField {
+  type: 'image-upload';
+  accept?: string;
+  description?: () => string;
+}
+
 export interface PrefixedInputField extends BaseField {
   type: 'prefixed-input';
   prefixKey: string;
@@ -91,6 +97,7 @@ export type FormField =
   | AuthoritiesField
   | KvGridField
   | FileListField
+  | ImageUploadField
   | PrefixedInputField
   | CustomField;
 
@@ -108,6 +115,8 @@ export interface TemplateDefinition {
   defaults: () => Record<string, unknown>;
   /** Build a Typst source string from the current form values. */
   generateTypstSource: (values: Record<string, unknown>) => string;
+  /** Prepare template-specific assets before compiling. */
+  prepareAssets?: (values: Record<string, unknown>) => Promise<void>;
   /** Build a human-friendly file name from the current form values. */
   getFileName: (values: Record<string, unknown>) => string;
   /** Bumped whenever the storage shape changes. */
